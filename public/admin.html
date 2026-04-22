@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hirustar — Admin Dashboard</title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin-body">
+  <div class="admin-shell">
+    <!-- ── SIDEBAR NAVIGATION ──────────────────────────────── -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">H</div>
+        <div class="logo-text">Hirustar Season 5</div>
+      </div>
+
+      <nav class="admin-tabs">
+        <button class="admin-tab active" id="tabScores" onclick="switchTab('scores')">
+          <span class="tab-icon">🏆</span>
+          <span class="tab-label">Live Scores</span>
+        </button>
+        <button class="admin-tab" id="tabContent" onclick="switchTab('content')">
+          <span class="tab-icon">🧩</span>
+          <span class="tab-label">Content Manager</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- ── MAIN CONTENT AREA ────────────────────────────────── -->
+    <main class="admin-main">
+      <header class="page-header">
+        <div class="header-title">
+          <h1 id="pageTitle">Live Scores</h1>
+          <p id="pageSubtitle">Monitor and manage real-time contestant rankings.</p>
+        </div>
+      </header>
+
+      <!-- ── SCORES TAB ─────────────────────────────────── -->
+      <div class="tab-page visible" id="pageScores">
+        <div class="admin-action-bar">
+          <div class="action-group">
+            <button class="btn-admin primary" onclick="resetVotes()">
+              <span>🔄</span> Reset Round Votes
+            </button>
+          </div>
+          <div class="action-group">
+            <button class="btn-admin danger" onclick="resetScores()">
+              <span>🗑️</span> Reset All Scores
+            </button>
+          </div>
+        </div>
+        <div class="scores-grid" id="contestantList">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- ── CONTENT TAB ────────────────────────────────── -->
+      <div class="tab-page" id="pageContent">
+        <div class="admin-action-bar">
+          <div class="action-group">
+            <button class="btn-admin primary" onclick="addContestant()">
+              <span>👤</span> Add Contestant
+            </button>
+            <button class="btn-admin" onclick="addJudge()">
+              <span>👨‍⚖️</span> Add Judge
+            </button>
+          </div>
+          <div class="action-group">
+            <button class="btn-admin danger" onclick="removeAllContestants()">
+              Remove All
+            </button>
+          </div>
+        </div>
+
+        <section class="content-section">
+          <div class="section-header">
+            <h2>Contestants</h2>
+            <p>Manage contestant profiles, photos, and base scores.</p>
+          </div>
+          <div class="content-list" id="contentContestants">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <section class="content-section">
+          <div class="section-header">
+            <h2>Judges</h2>
+            <p>Configure judge identities and panel appearances.</p>
+          </div>
+          <div class="content-list" id="contentJudges">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Hidden file input reused for all uploads -->
+  <input type="file" id="fileInputHidden" class="file-input-hidden" accept="image/*">
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let activeTab = 'scores';
+    let allJudges = [];
+    let allContestants = [];
+    const socket = io();
+
+    // ── Tab switching ──────────────────────────────────────────────────────
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('visible'));
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      
+      const targetPage = document.getElementById('page' + tab.charAt(0).toUpperCase() + tab.slice(1));
+      const targetTab = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+      
+      targetPage.classList.add('visible');
+      targetTab.classList.add('active');
+
+      // Update Header
+      const title = document.getElementById('pageTitle');
+      const subtitle = document.getElementById('pageSubtitle');
+      if (tab === 'scores') {
+        title.innerText = 'Live Scores';
+        subtitle.innerText = 'Monitor and manage real-time contestant rankings.';
+      } else {
+        title.innerText = 'Content Manager';
+        subtitle.innerText = 'Customize contestants and judges for the competition.';
+        buildContentManager();
+      }
+    }
+
+    // ── Rendering & Socket logic ──────────────────────────────────────────
+    function fallback(ch, bg) {
+      return `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22${bg}%22 width=%22100%25%22 height=%22100%25%22/><text x=%2250%22 y=%2262%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2238%22 font-family=%22sans-serif%22>${ch}</text></svg>`;
+    }
+
+    function render(data) {
+      const { contestants, judges, judgeVotes } = data;
+      allJudges = judges;
+      allContestants = contestants;
+      
+      const list = document.getElementById('contestantList');
+      list.innerHTML = '';
+
+      contestants.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'score-row-card';
+        card.innerHTML = `
+          <img class="contestant-avatar" src="/images/contestants/${c.image}" alt="${c.name}"
+               onerror="this.src='${fallback(c.name.charAt(0),'%2364748b')}'">
+          <div class="contestant-name">${c.name}</div>
+          <div class="vote-indicators">${judges.map(j => {
+            const jv = (judgeVotes[j.id] || []).includes(c.id);
+            return `<img class="vote-indicator ${jv?'voted':''}" src="/images/judges/${j.image}"
+              onerror="this.src='${fallback(j.name.charAt(0),'%2394a3b8')}'" title="${j.name}">`;
+          }).join('')}</div>
+          <input class="content-input score-edit-input" type="number" value="${c.score}"
+                 onchange="setScore(${c.id}, this.value)" title="Edit score">
+          <div class="admin-judge-btns">${judges.map(j => {
+            const disabled = (judgeVotes[j.id] || []).includes(c.id);
+            return `<button class="btn-plus7" ${disabled?'disabled':''}
+              onclick="addAsJudge(${c.id},${j.id})">+7<span class="judge-label">${j.name.split(' ')[0]}</span></button>`;
+          }).join('')}</div>`;
+        list.appendChild(card);
+      });
+
+      if (activeTab === 'content') buildContentManager();
+    }
+
+    function addAsJudge(contestantId, judgeId) { socket.emit('add_score', { contestantId, judgeId, force: false }); }
+    function setScore(contestantId, score) { socket.emit('set_score', { contestantId, score: parseInt(score) }); }
+    function resetVotes() { if (confirm('Reset all judge votes for a new round?')) socket.emit('reset_votes'); }
+    function resetScores() { if (confirm('Reset ALL scores to 0? This cannot be undone.')) socket.emit('reset_scores'); }
+
+    socket.on('state_update', render);
+
+    // ── Content Manager ────────────────────────────────────────────────────
+    function avatarSrcFor(type, filename, name) {
+      const folder = type === 'judge' ? 'judges' : 'contestants';
+      const safe = (filename || '').trim();
+      if (safe) return `/images/${folder}/${safe}`;
+      return fallback((name || '?').charAt(0), '#64748b');
+    }
+
+    function clampScore(n) {
+      const v = Number(n);
+      if (!Number.isFinite(v)) return 0;
+      return Math.max(0, Math.min(100, Math.round(v)));
+    }
+
+    function buildContentManager() {
+      const cWrap = document.getElementById('contentContestants');
+      const jWrap = document.getElementById('contentJudges');
+      cWrap.innerHTML = '';
+      jWrap.innerHTML = '';
+
+      allContestants
+        .slice()
+        .sort((a, b) => a.id - b.id)
+        .forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'content-card';
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="card-avatar-wrap">
+                <img class="content-avatar" id="c-avatar-${c.id}" src="${avatarSrcFor('contestant', c.image, c.name)}" 
+                     onerror="this.src='${fallback((c.name||'?').charAt(0), '#64748b')}'">
+              </div>
+              <div class="card-info">
+                <input class="content-input" id="c-name-${c.id}" value="${(c.name || '').replaceAll('"','&quot;')}" placeholder="Name">
+                <div class="score-wrap">
+                  <span class="score-label">Base Score:</span>
+                  <input class="content-input content-score" id="c-score-${c.id}" type="number" min="0" max="100" value="${clampScore(c.score)}">
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn-small" onclick="uploadForContestant(${c.id})">Photo</button>
+              <button class="btn-small primary" onclick="saveContestant(${c.id})">Save</button>
+              <button class="btn-small danger" onclick="deleteContestant(${c.id})">Delete</button>
+            </div>
+          `;
+          cWrap.appendChild(card);
+        });
+
+      allJudges
+        .slice()
+        .sort((a, b) => a.id - b.id)
+        .forEach(j => {
+          const card = document.createElement('div');
+          card.className = 'content-card';
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="card-avatar-wrap">
+                <img class="content-avatar" id="j-avatar-${j.id}" src="${avatarSrcFor('judge', j.image, j.name)}" 
+                     onerror="this.src='${fallback((j.name||'?').charAt(0), '#94a3b8')}'">
+              </div>
+              <div class="card-info">
+                <input class="content-input" id="j-name-${j.id}" value="${(j.name || '').replaceAll('"','&quot;')}" placeholder="Judge Name">
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn-small" onclick="uploadForJudge(${j.id})">Photo</button>
+              <button class="btn-small primary" onclick="saveJudge(${j.id})">Save</button>
+              <button class="btn-small danger" onclick="deleteJudge(${j.id})">Delete</button>
+            </div>
+          `;
+          jWrap.appendChild(card);
+        });
+    }
+
+    // CRUD functions remain mostly same but integrated with new UI
+    function addContestant() {
+      const name = prompt('New contestant name?');
+      if (!name) return;
+      socket.emit('upsert_contestant', { name: name.trim(), score: 0 });
+      if (activeTab !== 'content') switchTab('content');
+    }
+
+    function addJudge() {
+      const name = prompt('New judge name?');
+      if (!name) return;
+      socket.emit('upsert_judge', { name: name.trim() });
+      if (activeTab !== 'content') switchTab('content');
+    }
+
+    function saveContestant(id) {
+      const name = document.getElementById(`c-name-${id}`).value.trim();
+      const score = clampScore(document.getElementById(`c-score-${id}`).value);
+      const c = allContestants.find(x => x.id === id);
+      socket.emit('upsert_contestant', { id, name, score, image: c?.image });
+    }
+
+    function deleteContestant(id) {
+      if (!confirm('Delete this contestant?')) return;
+      socket.emit('delete_contestant', { id });
+    }
+
+    function saveJudge(id) {
+      const name = document.getElementById(`j-name-${id}`).value.trim();
+      const j = allJudges.find(x => x.id === id);
+      socket.emit('upsert_judge', { id, name, image: j?.image });
+    }
+
+    function deleteJudge(id) {
+      if (!confirm('Delete this judge?')) return;
+      socket.emit('delete_judge', { id });
+    }
+
+    function removeAllContestants() {
+      if (!confirm('Remove ALL contestants?')) return;
+      socket.emit('clear_contestants');
+    }
+
+    // ── Upload ─────────────────────────────────────────────────────────────
+    let pendingUpload = null;
+    function triggerUploadDirect(filename, type, afterUpload) {
+      pendingUpload = { filename, type, afterUpload };
+      const fi = document.getElementById('fileInputHidden');
+      fi.value = '';
+      fi.click();
+    }
+
+    function uploadForContestant(id) {
+      const c = allContestants.find(x => x.id === id);
+      const base = `contestant_${id}_${Date.now()}`;
+      triggerUploadDirect(base, 'contestant', (data) => {
+        socket.emit('upsert_contestant', { id, name: c?.name, score: c?.score, image: data.filename });
+      });
+    }
+
+    function uploadForJudge(id) {
+      const j = allJudges.find(x => x.id === id);
+      const base = `judge_${id}_${Date.now()}`;
+      triggerUploadDirect(base, 'judge', (data) => {
+        socket.emit('upsert_judge', { id, name: j?.name, image: data.filename });
+      });
+    }
+
+    document.getElementById('fileInputHidden').addEventListener('change', async function() {
+      if (!this.files[0] || !pendingUpload) return;
+      const { filename, type, afterUpload } = pendingUpload;
+      const form = new FormData();
+      form.append('filename', filename);
+      form.append('type', type);
+      form.append('photo', this.files[0]);
+
+      try {
+        const res = await fetch('/api/upload-image', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.ok) afterUpload(data);
+      } catch(e) { alert('Upload failed'); }
+      pendingUpload = null;
+    });
+
+    switchTab('scores');
+  </script>
+</body>
+</html>

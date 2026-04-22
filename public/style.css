@@ -1,0 +1,569 @@
+/* ============================================================
+   HIRUSTAR SCOREBOARD — SHARED STYLES
+   Premium TV-ready design with dark glassmorphism
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg-dark: #0a0a12;
+  --bg-glass: rgba(15, 15, 30, 0.75);
+  --bg-glass-light: rgba(25, 25, 50, 0.6);
+  --bg-card: rgba(20, 20, 45, 0.85);
+  --accent-gold: #f5c842;
+  --accent-gold-glow: rgba(245, 200, 66, 0.4);
+  --accent-blue: #4e8cff;
+  --accent-purple: #9b59ff;
+  --accent-pink: #ff4e8c;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-gold: rgba(245, 200, 66, 0.3);
+  --shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-glow-gold: 0 0 30px rgba(245, 200, 66, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── DISPLAY PAGE ─────────────────────────────────────────── */
+
+.display-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.scoreboard-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 30px 20px 30px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-left: none;
+}
+
+.scoreboard-header {
+  text-align: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.scoreboard-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--accent-gold) 0%, #ffe082 50%, var(--accent-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 15px var(--accent-gold-glow));
+}
+
+.scoreboard-subtitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  text-shadow: 0 0 10px var(--accent-gold-glow);
+}
+
+.contestant-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 40px; /* Further increased gap for better separation */
+  overflow-y: auto;
+  overflow-x: visible; /* Allow avatars to overflow */
+  padding: 20px 5px 20px 50px; /* Left padding for overlapping avatars */
+  position: relative;
+}
+
+.contestant-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.contestant-list::-webkit-scrollbar-thumb {
+  background: rgba(245, 200, 66, 0.3);
+  border-radius: 4px;
+}
+
+/* ── CONTESTANT ROW (DISPLAY) ───────────────────────────── */
+
+/* Clean "broadcast bar" rows (no cards/boxes) */
+.display-row {
+  position: relative;
+  overflow: visible;
+}
+
+.display-row.flip-animate {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.display-bar {
+  position: relative;
+  height: 64px;
+  border-radius: 12px;
+  overflow: visible;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-left: 32px; /* Make room for larger avatar */
+}
+
+.display-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  opacity: 0.95;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.display-row.top .display-bar {
+  background: linear-gradient(90deg, rgba(38, 185, 98, 0.4), rgba(22, 135, 78, 0.2));
+  border-color: rgba(38, 185, 98, 0.4);
+}
+
+.display-row.top .display-bar-fill {
+  background: linear-gradient(90deg, rgba(38, 185, 98, 0.95), rgba(22, 135, 78, 0.7));
+}
+
+.display-row.low .display-bar {
+  background: linear-gradient(90deg, rgba(220, 55, 55, 0.4), rgba(160, 25, 25, 0.2));
+  border-color: rgba(220, 55, 55, 0.4);
+}
+
+.display-row.low .display-bar-fill {
+  background: linear-gradient(90deg, rgba(220, 55, 55, 0.92), rgba(160, 25, 25, 0.7));
+}
+
+.display-content {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  z-index: 2;
+}
+
+.display-rank {
+  min-width: 28px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.display-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.display-percent {
+  min-width: 80px;
+  text-align: right;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  margin-right: 15px;
+}
+
+.display-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  position: absolute;
+  left: -42px; /* Offset to overflow */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
+/* Judge Panel Overrides for merged UI */
+.judge-view-container .contestant-list {
+  padding-left: 60px;
+  gap: 50px;
+}
+
+.judge-view-container .display-bar {
+  width: 100%;
+  margin-left: 0;
+}
+
+.judge-view-container .display-content {
+  padding-right: 20px;
+}
+
+.judge-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: auto;
+}
+
+/* ── +7 ANIMATION OVERLAY ─────────────────────────────── */
+
+.score-popup {
+  position: absolute;
+  right: 72px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(245, 200, 66, 0.2), rgba(245, 200, 66, 0.05));
+  border: 1px solid var(--accent-gold);
+  border-radius: 40px;
+  padding: 4px 12px 4px 4px;
+  opacity: 0;
+  z-index: 20;
+  pointer-events: none;
+  transition: none;
+}
+
+.score-popup.animate-in {
+  animation: popupIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.score-popup.animate-out {
+  animation: popupOut 0.4s ease-in forwards;
+}
+
+@keyframes popupIn {
+  0% { opacity: 0; transform: translateY(-50%) scale(0) translateX(40px); }
+  100% { opacity: 1; transform: translateY(-50%) scale(1) translateX(0); }
+}
+
+@keyframes popupOut {
+  0% { opacity: 1; transform: translateY(-50%) scale(1) translateX(0); }
+  100% { opacity: 0; transform: translateY(-50%) scale(0.8) translateX(-20px); }
+}
+
+.score-popup .judge-mini-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-gold);
+}
+
+.score-popup .delta-text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  text-shadow: 0 0 10px var(--accent-gold-glow);
+}
+
+/* ── Score tick-up animation ───────────────────────────── */
+
+.score-tick {
+  animation: scorePulse 0.6s ease-out;
+}
+
+@keyframes scorePulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); filter: drop-shadow(0 0 8px var(--accent-gold)); }
+  100% { transform: scale(1); }
+}
+
+/* ── Row reorder animation (FLIP technique) ───────────── */
+/* now applied to .display-row */
+
+/* ── JUDGE PANEL & ADMIN PANEL ─────────────────────────── */
+
+.panel-page {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(160deg, #0a0a18 0%, #12102a 50%, #0a0a18 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 28px;
+  background: var(--bg-glass);
+  border-bottom: 1px solid var(--border-glass);
+  flex-shrink: 0;
+}
+
+.panel-judge-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--accent-gold);
+  box-shadow: 0 0 20px var(--accent-gold-glow);
+}
+
+.panel-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.panel-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.panel-contestant-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-contestant-list::-webkit-scrollbar {
+  width: 6px;
+}
+.panel-contestant-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+
+/* ── Panel contestant row ─────────────────────────────── */
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.panel-row:hover {
+  background: rgba(30, 28, 60, 0.9);
+}
+
+.panel-row .contestant-avatar {
+  width: 44px;
+  height: 44px;
+}
+
+.panel-row .contestant-name {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.panel-row .contestant-score {
+  font-size: 1.5rem;
+  min-width: 50px;
+}
+
+.btn-plus7 {
+  background: linear-gradient(135deg, var(--accent-gold) 0%, #e6b422 100%);
+  color: #0a0a12;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast),
+              opacity var(--transition-fast);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.btn-plus7:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.btn-plus7:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-plus7:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Judge vote indicators on panel rows */
+.vote-indicators {
+  display: flex;
+  gap: 4px;
+  margin-left: 6px;
+}
+
+.vote-indicator {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-gold);
+  opacity: 0.2;
+  transition: opacity var(--transition-fast);
+}
+
+.vote-indicator.voted {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--accent-gold-glow);
+}
+
+/* ── Admin specific ──────────────────────────────────── */
+
+.admin-controls {
+  display: flex;
+  gap: 10px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border-glass);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.btn-admin {
+  background: var(--bg-glass-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-admin:hover {
+  background: rgba(40, 40, 80, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-admin.danger {
+  border-color: rgba(255, 78, 140, 0.4);
+  color: var(--accent-pink);
+}
+.btn-admin.danger:hover {
+  background: rgba(255, 78, 140, 0.15);
+}
+
+.admin-judge-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-judge-btns .btn-plus7 {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  position: relative;
+}
+
+.admin-judge-btns .btn-plus7 .judge-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+/* Score edit input */
+.score-edit-input {
+  width: 60px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 6px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.score-edit-input:focus {
+  border-color: var(--accent-gold);
+}
+
+/* ── Responsive (smaller screens / tablets for judges) ── */
+
+@media (max-width: 600px) {
+  .panel-header {
+    padding: 14px 16px;
+  }
+  .panel-contestant-list {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .panel-row {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .btn-plus7 {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+  }
+}

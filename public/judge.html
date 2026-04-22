@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hirustar — Judge Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="judge-view-container">
+  <div class="panel-page">
+    <div class="panel-header" id="panelHeader">
+      <img class="panel-judge-avatar" id="judgeAvatar" src="" alt="">
+      <div>
+        <div class="panel-title" id="judgeName">Judge Panel</div>
+        <div class="panel-label">Hirustar Season 5</div>
+      </div>
+    </div>
+    
+    <div class="contestant-list" id="contestantList">
+      <!-- Dynamically populated with scoreboard-style rows -->
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const judgeId = parseInt(window.location.pathname.split('/').pop());
+    const list = document.getElementById('contestantList');
+
+    function fallbackSvg(letter, bg) {
+      return `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22${bg}%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2262%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2238%22 font-family=%22sans-serif%22>${letter}</text></svg>`;
+    }
+
+    function buildRow(c, index, judges, currentJudgeVotes, judgeVotes) {
+      const hasVoted = currentJudgeVotes.includes(c.id);
+      const rank = index + 1;
+      const row = document.createElement('div');
+      row.className = `display-row ${rank <= 4 ? 'top' : 'low'}`;
+      row.dataset.id = c.id;
+      row.innerHTML = `
+        <div class="display-bar">
+          <div class="display-bar-fill" style="width:${c.score}%"></div>
+          <div class="display-content">
+            <div class="display-rank">${String(rank).padStart(2, '0')}</div>
+            <div class="display-name">${c.name}</div>
+            <div class="display-percent">${c.score}%</div>
+            
+            <div class="judge-actions">
+              <div class="vote-indicators">${judges.map(j => {
+                const jv = (judgeVotes[j.id] || []).includes(c.id);
+                return `<img class="vote-indicator ${jv?'voted':''}" src="/images/judges/${j.image}"
+                  onerror="this.src='${fallbackSvg(j.name.charAt(0), '#444')}'" title="${j.name}">`;
+              }).join('')}</div>
+              
+              <button class="btn-plus7" ${hasVoted?'disabled':''} onclick="addScore(${c.id})">
+                ${hasVoted ? 'VOTED' : 'VOTE'}
+              </button>
+            </div>
+
+            <img class="display-avatar" src="/images/contestants/${c.image}" alt="${c.name}"
+                 onerror="this.src='${fallbackSvg(c.name.charAt(0), '#333')}'">
+          </div>
+        </div>`;
+      return row;
+    }
+
+    function render(data) {
+      const { contestants, judges, judgeVotes } = data;
+      const judge = judges.find(j => j.id === judgeId);
+      
+      if (judge) {
+        document.getElementById('judgeName').textContent = judge.name;
+        const av = document.getElementById('judgeAvatar');
+        av.src = `/images/judges/${judge.image}`;
+        av.onerror = function(){ this.src = fallbackSvg(judge.name.charAt(0), '#444'); };
+      }
+
+      const currentJudgeVotes = judgeVotes[judgeId] || [];
+
+      // ── FLIP Animation: Store old positions ──
+      const oldRects = {};
+      document.querySelectorAll('.display-row').forEach(r => {
+        oldRects[r.dataset.id] = r.getBoundingClientRect();
+      });
+
+      // ── Rebuild List ──
+      list.innerHTML = '';
+      contestants.forEach((c, index) => {
+        list.appendChild(buildRow(c, index, judges, currentJudgeVotes, judgeVotes));
+      });
+
+      // ── FLIP Animation: Apply transforms ──
+      document.querySelectorAll('.display-row').forEach(r => {
+        const old = oldRects[r.dataset.id];
+        if (!old) return;
+        const ny = r.getBoundingClientRect();
+        const dy = old.top - ny.top;
+        if (Math.abs(dy) > 1) {
+          r.style.transform = `translateY(${dy}px)`;
+          r.style.transition = 'none';
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              r.classList.add('flip-animate');
+              r.style.transform = '';
+              r.style.transition = '';
+              r.addEventListener('transitionend', () => r.classList.remove('flip-animate'), { once: true });
+            });
+          });
+        }
+      });
+    }
+
+    function addScore(contestantId) {
+      socket.emit('add_score', { contestantId, judgeId });
+    }
+
+    socket.on('state_update', render);
+  </script>
+</body>
+</html>
