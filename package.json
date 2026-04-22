@@ -4,7 +4,15 @@
   "description": "Hirustar Reality Singing Show Live Scoreboard",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "bundle": "pkg . --targets node18-win-x64 --output hirustar-scoreboard.exe"
+  },
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "data.js"
+    ]
   },
   "dependencies": {
     "express": "^4.18.2",

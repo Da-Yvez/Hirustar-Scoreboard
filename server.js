@@ -8,9 +8,15 @@ const { contestants: fallbackContestants, judges: fallbackJudges } = require('./
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: { origin: "*" },
+  allowEIO3: true // Support older clients if any
+});
 
-const STATE_FILE = path.join(__dirname, 'state.json');
+const isPkg = typeof process.pkg !== 'undefined';
+const baseDir = isPkg ? path.dirname(process.execPath) : __dirname;
+
+const STATE_FILE = path.join(baseDir, 'state.json');
 
 function deepClone(v) {
   return JSON.parse(JSON.stringify(v));
@@ -87,7 +93,7 @@ saveStateToDisk();
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const folder = req.body.type === 'judge' ? 'judges' : 'contestants';
-    const dest = path.join(__dirname, 'public', 'images', folder);
+    const dest = path.join(baseDir, 'public', 'images', folder);
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
   },
@@ -102,6 +108,11 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // ── Static files ────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
+// Also serve external uploads if they exist (next to the .exe)
+if (isPkg) {
+  // Map /images to baseDir/public/images
+  app.use(express.static(path.join(baseDir, 'public')));
+}
 
 // ── API: get full state ─────────────────────────────────────────────────────
 app.get('/api/state', (req, res) => {
@@ -174,7 +185,7 @@ function nextId(items) {
 
 // ── Socket.io ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
-  console.log(`[+] Client connected: ${socket.id}`);
+  console.log(`[+] Client connected: ${socket.id} (Total: ${io.engine.clientsCount})`);
 
   // Send full state on connect
   socket.emit('state_update', {
