@@ -137,6 +137,8 @@
     const judgeId = parseInt(window.location.pathname.split('/').pop());
     const list = document.getElementById('contestantList');
 
+    socket.on('connect', () => socket.emit('identify', { type: 'judge', id: judgeId }));
+
     /* ── Toast ──────────────────────────────────────────────────── */
     let toastTimer;
     function showToast(msg, type = '') {

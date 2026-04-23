@@ -91,6 +91,15 @@ function ensureVoteMaps() {
 ensureVoteMaps();
 saveStateToDisk();
 
+// ── Connected node tracking ──────────────────────────────────────────────────
+// Map: socketId -> { type: 'judge'|'display'|'admin', id?: number }
+const connectedNodes = new Map();
+
+function broadcastNodes() {
+  const nodes = [...connectedNodes.values()];
+  io.emit('nodes_update', nodes);
+}
+
 // ── Multer: image upload storage ────────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -127,7 +136,18 @@ app.get('/api/state', (req, res) => {
 
 // ── Serve named pages ────────────────────────────────────────────────────────
 app.get('/display', (req, res) => res.sendFile(path.join(__dirname, 'public', 'display.html')));
-app.get('/judge/:id', (req, res) => res.sendFile(path.join(__dirname, 'public', 'judge.html')));
+app.get('/judge/:id', (req, res) => {
+  const jid = parseInt(req.params.id);
+  const valid = judges.some(j => j.id === jid);
+  if (!valid) {
+    return res.status(404).send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invalid Judge</title>
+      <style>body{background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;gap:1rem;}
+      h1{font-size:2rem;color:#f87171;}p{color:#94a3b8;}a{color:#6366f1;text-decoration:none;}</style></head>
+      <body><h1>⚠️ Invalid Judge ID</h1><p>There is no judge with ID <strong>${jid}</strong>.</p>
+      <a href="/admin">← Go to Admin</a></body></html>`);
+  }
+  res.sendFile(path.join(__dirname, 'public', 'judge.html'));
+});
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // ── Image upload API ─────────────────────────────────────────────────────────
@@ -189,6 +209,15 @@ function nextId(items) {
 // ── Socket.io ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`[+] Client connected: ${socket.id} (Total: ${io.engine.clientsCount})`);
+  // Add as unknown until they identify
+  connectedNodes.set(socket.id, { type: 'unknown' });
+  broadcastNodes();
+
+  // Client identifies itself
+  socket.on('identify', ({ type, id }) => {
+    connectedNodes.set(socket.id, { type, id: id ?? null });
+    broadcastNodes();
+  });
 
   // Send full state on connect
   socket.emit('state_update', {
@@ -333,6 +362,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    connectedNodes.delete(socket.id);
+    broadcastNodes();
     console.log(`[-] Client disconnected: ${socket.id}`);
   });
 });

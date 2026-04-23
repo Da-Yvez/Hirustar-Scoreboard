@@ -5,6 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hirustar — Admin Dashboard</title>
   <link rel="stylesheet" href="/admin.css">
+  <style>
+    .nodes-panel {
+      margin-top: auto;
+      padding: 1rem 0.75rem 1.25rem;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .nodes-title {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 0.6rem;
+      font-weight: 600;
+    }
+    .nodes-list { display: flex; flex-direction: column; gap: 0.4rem; }
+    .node-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.04);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #94a3b8;
+      transition: background 0.2s, color 0.2s;
+    }
+    .node-pill.online {
+      background: rgba(34,197,94,0.15);
+      color: #000;
+    }
+    .node-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #334155;
+      flex-shrink: 0;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .node-pill.online .node-dot {
+      background: #22c55e;
+      box-shadow: 0 0 6px rgba(34,197,94,0.7);
+    }
+    /* Make sidebar flex so nodes panel sticks to bottom */
+    .admin-sidebar { display: flex; flex-direction: column; }
+    .admin-tabs { flex: 1; }
+
+    /* Judge URL badge in content manager */
+    .judge-url-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+      padding: 3px 8px;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.4);
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      letter-spacing: 0.03em;
+      font-family: monospace;
+      user-select: all;
+    }
+    .judge-url-badge .badge-icon { font-size: 0.6rem; opacity: 0.7; font-family: sans-serif; }
+  </style>
 </head>
 <body class="admin-body">
   <div class="admin-shell">
@@ -25,6 +91,14 @@
           <span class="tab-label">Content Manager</span>
         </button>
       </nav>
+
+      <!-- ── CONNECTED NODES ──────────────────────────────── -->
+      <div class="nodes-panel">
+        <div class="nodes-title">Connected Nodes</div>
+        <div id="nodesList" class="nodes-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
     </aside>
 
     <!-- ── MAIN CONTENT AREA ────────────────────────────────── -->
@@ -105,6 +179,7 @@
     let allJudges = [];
     let allContestants = [];
     const socket = io();
+    socket.on('connect', () => socket.emit('identify', { type: 'admin' }));
 
     // ── Tab switching ──────────────────────────────────────────────────────
     function switchTab(tab) {
@@ -176,6 +251,34 @@
 
     socket.on('state_update', render);
 
+    // ── Node connection indicator ──────────────────────────────────────────
+    socket.on('nodes_update', (nodes) => {
+      const list = document.getElementById('nodesList');
+      if (!list) return;
+
+      // Build expected node list from current judges
+      const expected = [
+        { key: 'display', label: '📺 Display' },
+        ...allJudges.map(j => ({ key: `judge-${j.id}`, label: `⚖️ ${j.name.split(' ')[0]}` }))
+      ];
+
+      // Which nodes are online?
+      const onlineKeys = new Set();
+      nodes.forEach(n => {
+        if (n.type === 'display') onlineKeys.add('display');
+        if (n.type === 'judge' && n.id != null) onlineKeys.add(`judge-${n.id}`);
+      });
+
+      list.innerHTML = '';
+      expected.forEach(({ key, label }) => {
+        const online = onlineKeys.has(key);
+        const pill = document.createElement('div');
+        pill.className = 'node-pill' + (online ? ' online' : '');
+        pill.innerHTML = `<span class="node-dot"></span>${label}`;
+        list.appendChild(pill);
+      });
+    });
+
     // ── Content Manager ────────────────────────────────────────────────────
     function avatarSrcFor(type, filename, name) {
       const folder = type === 'judge' ? 'judges' : 'contestants';
@@ -239,6 +342,9 @@
               </div>
               <div class="card-info">
                 <input class="content-input" id="j-name-${j.id}" value="${(j.name || '').replaceAll('"','&quot;')}" placeholder="Judge Name">
+                <div class="judge-url-badge" title="Judge panel URL">
+                  <span class="badge-icon">🔗</span>/judge/${j.id}
+                </div>
               </div>
             </div>
             <div class="card-actions">

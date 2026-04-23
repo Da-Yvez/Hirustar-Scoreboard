@@ -1,4 +1,5 @@
 const socket = io();
+socket.on('connect', () => socket.emit('identify', { type: 'display' }));
 let currentState = null;
 let previousOrder = [];
 const contestantList = document.getElementById('contestantList');
