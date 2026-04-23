@@ -152,14 +152,14 @@
                onerror="this.src='${fallback(c.name.charAt(0),'%2364748b')}'">
           <div class="contestant-name">${c.name}</div>
           <div class="vote-indicators">${judges.map(j => {
-            const jv = (judgeVotes[j.id] || []).includes(c.id);
+            const jv = judgeVotes[j.id] === c.id;
             return `<img class="vote-indicator ${jv?'voted':''}" src="/images/judges/${j.image}"
               onerror="this.src='${fallback(j.name.charAt(0),'%2394a3b8')}'" title="${j.name}">`;
           }).join('')}</div>
           <input class="content-input score-edit-input" type="number" value="${c.score}"
                  onchange="setScore(${c.id}, this.value)" title="Edit score">
           <div class="admin-judge-btns">${judges.map(j => {
-            const disabled = (judgeVotes[j.id] || []).includes(c.id);
+            const disabled = judgeVotes[j.id] === c.id;
             return `<button class="btn-plus7" ${disabled?'disabled':''}
               onclick="addAsJudge(${c.id},${j.id})">+7<span class="judge-label">${j.name.split(' ')[0]}</span></button>`;
           }).join('')}</div>`;
@@ -169,7 +169,7 @@
       if (activeTab === 'content') buildContentManager();
     }
 
-    function addAsJudge(contestantId, judgeId) { socket.emit('add_score', { contestantId, judgeId, force: false }); }
+    function addAsJudge(contestantId, judgeId) { socket.emit('add_score', { contestantId, judgeId, force: true }); }
     function setScore(contestantId, score) { socket.emit('set_score', { contestantId, score: parseInt(score) }); }
     function resetVotes() { if (confirm('Reset all judge votes for a new round?')) socket.emit('reset_votes'); }
     function resetScores() { if (confirm('Reset ALL scores to 0? This cannot be undone.')) socket.emit('reset_scores'); }

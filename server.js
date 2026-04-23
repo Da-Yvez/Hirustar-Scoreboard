@@ -69,21 +69,23 @@ let judges = deepClone(disk?.judges || fallbackJudges).map(j => ({
 }));
 
 // Track which judge has already voted for which contestant this round
-// Structure: { judgeId: Set<contestantId> }
+// Structure: { judgeId: contestantId | null }  — one vote per judge, exclusive per contestant
 const judgeVotes = {};
 function ensureVoteMaps() {
-  // ensure all judges have sets
+  // ensure all judges have an entry (null = hasn't voted yet)
   judges.forEach(j => {
-    if (!judgeVotes[j.id]) judgeVotes[j.id] = new Set();
+    if (!(j.id in judgeVotes)) judgeVotes[j.id] = null;
   });
   // remove votes for deleted judges
   Object.keys(judgeVotes).forEach(jid => {
     if (!judges.some(j => String(j.id) === String(jid))) delete judgeVotes[jid];
   });
-  // prune contestant ids that no longer exist
+  // nullify votes for contestants that no longer exist
   const validContestantIds = new Set(contestants.map(c => c.id));
-  Object.values(judgeVotes).forEach(set => {
-    [...set].forEach(cid => { if (!validContestantIds.has(cid)) set.delete(cid); });
+  Object.keys(judgeVotes).forEach(jid => {
+    if (judgeVotes[jid] !== null && !validContestantIds.has(judgeVotes[jid])) {
+      judgeVotes[jid] = null;
+    }
   });
 }
 ensureVoteMaps();
@@ -161,9 +163,10 @@ function getSortedContestants() {
 }
 
 function serializeVotes() {
+  // Returns { judgeId: contestantId | null }
   const out = {};
-  Object.entries(judgeVotes).forEach(([jid, set]) => {
-    out[jid] = [...set];
+  Object.entries(judgeVotes).forEach(([jid, cid]) => {
+    out[jid] = cid; // null or a contestantId number
   });
   return out;
 }
@@ -202,10 +205,20 @@ io.on('connection', (socket) => {
 
     if (!judge || !contestant) return;
 
-    // Check if judge already voted (skip check if forced by admin)
-    if (!force && judgeVotes[judgeId] && judgeVotes[judgeId].has(contestantId)) {
-      socket.emit('vote_rejected', { reason: 'already_voted', contestantId, judgeId });
-      return;
+    if (!force) {
+      // Rule 1: This judge already voted
+      if (judgeVotes[judgeId] !== null && judgeVotes[judgeId] !== undefined) {
+        socket.emit('vote_rejected', { reason: 'already_voted', contestantId, judgeId });
+        return;
+      }
+      // Rule 2: Another judge already claimed this contestant
+      const contestantTaken = Object.entries(judgeVotes).some(
+        ([jid, cid]) => cid === contestantId && Number(jid) !== judgeId
+      );
+      if (contestantTaken) {
+        socket.emit('vote_rejected', { reason: 'contestant_taken', contestantId, judgeId });
+        return;
+      }
     }
 
     // Apply score
@@ -213,7 +226,7 @@ io.on('connection', (socket) => {
     const after = clampScore(before + 7);
     const delta = after - before;
     contestant.score = after;
-    if (judgeVotes[judgeId]) judgeVotes[judgeId].add(contestantId);
+    judgeVotes[judgeId] = contestantId;
 
     saveStateToDisk();
     console.log(`[SCORE] ${judge.name} → ${contestant.name} +${delta} (total: ${contestant.score})`);
@@ -296,7 +309,7 @@ io.on('connection', (socket) => {
 
   // Admin: reset all votes for a new round
   socket.on('reset_votes', () => {
-    judges.forEach(j => { judgeVotes[j.id] = new Set(); });
+    judges.forEach(j => { judgeVotes[j.id] = null; });
     console.log('[RESET] All judge votes cleared for new round');
     broadcastState(null);
   });
@@ -304,7 +317,7 @@ io.on('connection', (socket) => {
   // Admin: reset all scores to 0
   socket.on('reset_scores', () => {
     contestants.forEach(c => { c.score = 0; });
-    judges.forEach(j => { judgeVotes[j.id] = new Set(); });
+    judges.forEach(j => { judgeVotes[j.id] = null; });
     console.log('[RESET] All scores and votes cleared');
     saveStateToDisk();
     broadcastState(null);
@@ -313,7 +326,7 @@ io.on('connection', (socket) => {
   // Admin: remove all contestants (content reset)
   socket.on('clear_contestants', () => {
     contestants = [];
-    judges.forEach(j => { judgeVotes[j.id] = new Set(); });
+    judges.forEach(j => { judgeVotes[j.id] = null; });
     console.log('[CONTENT] All contestants removed');
     saveStateToDisk();
     broadcastState(null);

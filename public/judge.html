@@ -5,6 +5,116 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hirustar — Judge Dashboard</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    /* ── Toast ───────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e1e2e;
+      color: #fff;
+      border: 1px solid #ff4d6d;
+      border-radius: 10px;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      pointer-events: none;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.toast-taken { border-color: #f59e0b; }
+    #toast.toast-voted { border-color: #6366f1; }
+
+    /* ── VOTED button — bright yellow, animated ──────────────────── */
+    .btn-voted {
+      background: #f59e0b !important;
+      border: 2px solid #fbbf24 !important;
+      color: #1a1a1a !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.08em !important;
+      cursor: default !important;
+      pointer-events: none;
+      opacity: 1 !important;
+      animation: votedPulse 1.8s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(251,191,36,0.7);
+    }
+    @keyframes votedPulse {
+      0%   { box-shadow: 0 0 0 0   rgba(251,191,36,0.7); }
+      50%  { box-shadow: 0 0 0 10px rgba(251,191,36,0);  }
+      100% { box-shadow: 0 0 0 0   rgba(251,191,36,0);   }
+    }
+
+    /* ── Greyed-out button (other rows after voting) ─────────────── */
+    .btn-greyed {
+      opacity: 0.3 !important;
+      cursor: default !important;
+      pointer-events: none;
+      filter: grayscale(1);
+    }
+
+    /* ── Fixed size for ALL vote buttons — same placeholder on every screen ── */
+    .judge-actions .btn-plus7 {
+      width: 140px !important;
+      min-width: 140px !important;
+      max-width: 140px !important;
+      height: 52px !important;
+      min-height: 52px !important;
+      box-sizing: border-box !important;
+      overflow: hidden;
+    }
+
+    /* ── Taken-by-other button (other judges' view) ──────────────── */
+    .btn-taken-by {
+      opacity: 1 !important;
+      cursor: default !important;
+      pointer-events: none;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      padding: 4px 8px 4px 6px !important;
+      background: rgba(251,191,36,0.08) !important;
+      border: 2px solid #f59e0b !important;
+      color: #fde68a !important;
+    }
+    .btn-taken-by .tb-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid #fbbf24;
+      box-shadow: 0 0 10px rgba(251,191,36,0.55), 0 0 22px rgba(251,191,36,0.25);
+    }
+    .btn-taken-by .tb-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.3;
+      min-width: 0; /* allow text truncation */
+      overflow: hidden;
+    }
+    .btn-taken-by .tb-sub  {
+      font-size: 0.45rem;
+      opacity: 0.65;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+    }
+    .btn-taken-by .tb-name {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #fbbf24;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+  </style>
 </head>
 <body class="judge-view-container">
   <div class="panel-page">
@@ -15,11 +125,11 @@
         <div class="panel-label">Hirustar Season 5</div>
       </div>
     </div>
-    
-    <div class="contestant-list" id="contestantList">
-      <!-- Dynamically populated with scoreboard-style rows -->
-    </div>
+
+    <div class="contestant-list" id="contestantList"></div>
   </div>
+
+  <div id="toast"></div>
 
   <script src="/socket.io.min.js"></script>
   <script>
@@ -27,13 +137,68 @@
     const judgeId = parseInt(window.location.pathname.split('/').pop());
     const list = document.getElementById('contestantList');
 
+    /* ── Toast ──────────────────────────────────────────────────── */
+    let toastTimer;
+    function showToast(msg, type = '') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'show' + (type ? ` toast-${type}` : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+    }
+
+    /* ── Fallback SVG avatar ────────────────────────────────────── */
     function fallbackSvg(letter, bg) {
       return `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22${bg}%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2262%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2238%22 font-family=%22sans-serif%22>${letter}</text></svg>`;
     }
 
-    function buildRow(c, index, judges, currentJudgeVotes, judgeVotes) {
-      const hasVoted = currentJudgeVotes.includes(c.id);
+    /* ── Build one row ──────────────────────────────────────────── */
+    function buildRow(c, index, judges, judgeVotes, myVotedId) {
       const rank = index + 1;
+
+      // Who voted for this contestant?
+      const claimedEntry    = Object.entries(judgeVotes).find(([, cid]) => cid === c.id);
+      const claimedByJudgeId = claimedEntry?.[0];
+      const claimedByJudge  = claimedByJudgeId
+        ? judges.find(j => String(j.id) === String(claimedByJudgeId))
+        : null;
+
+      const isMyVote       = myVotedId === c.id;            // I voted for this one
+      const isTakenByOther = claimedByJudge && !isMyVote;   // Someone else voted for this
+      const iHaveVoted     = myVotedId !== null;             // I have voted (somewhere)
+
+      /* ── Button logic ─────────────────────────────────────────── */
+      let btnHTML;
+
+      if (isMyVote) {
+        // ★ Bright yellow VOTED button — MY choice
+        btnHTML = `<button class="btn-plus7 btn-voted" disabled>★ VOTED</button>`;
+
+      } else if (isTakenByOther) {
+        // Another judge voted here — highlighted indicator with their avatar
+        const jImg      = `/images/judges/${claimedByJudge.image}`;
+        const jFallback = fallbackSvg(claimedByJudge.name.charAt(0), '#7a5c00');
+        const firstName = claimedByJudge.name.split(' ')[0];
+        btnHTML = `
+          <button class="btn-plus7 btn-taken-by" disabled>
+            <img class="tb-avatar" src="${jImg}"
+                 onerror="this.src='${jFallback}'"
+                 title="${claimedByJudge.name}">
+            <div class="tb-label">
+              <span class="tb-sub">Voted by</span>
+              <span class="tb-name">${firstName}</span>
+            </div>
+          </button>`;
+
+      } else if (iHaveVoted) {
+        // I already voted elsewhere — grey this out
+        btnHTML = `<button class="btn-plus7 btn-greyed" disabled>VOTE</button>`;
+
+      } else {
+        // Open — can vote
+        btnHTML = `<button class="btn-plus7" onclick="addScore(${c.id})">VOTE</button>`;
+      }
+
       const row = document.createElement('div');
       row.className = `display-row ${rank <= 4 ? 'top' : 'low'}`;
       row.dataset.id = c.id;
@@ -44,19 +209,7 @@
             <div class="display-rank">${String(rank).padStart(2, '0')}</div>
             <div class="display-name">${c.name}</div>
             <div class="display-percent">${c.score}%</div>
-            
-            <div class="judge-actions">
-              <div class="vote-indicators">${judges.map(j => {
-                const jv = (judgeVotes[j.id] || []).includes(c.id);
-                return `<img class="vote-indicator ${jv?'voted':''}" src="/images/judges/${j.image}"
-                  onerror="this.src='${fallbackSvg(j.name.charAt(0), '#444')}'" title="${j.name}">`;
-              }).join('')}</div>
-              
-              <button class="btn-plus7" ${hasVoted?'disabled':''} onclick="addScore(${c.id})">
-                ${hasVoted ? 'VOTED' : 'VOTE'}
-              </button>
-            </div>
-
+            <div class="judge-actions">${btnHTML}</div>
             <img class="display-avatar" src="/images/contestants/${c.image}" alt="${c.name}"
                  onerror="this.src='${fallbackSvg(c.name.charAt(0), '#333')}'">
           </div>
@@ -64,55 +217,59 @@
       return row;
     }
 
+    /* ── Render ─────────────────────────────────────────────────── */
     function render(data) {
       const { contestants, judges, judgeVotes } = data;
       const judge = judges.find(j => j.id === judgeId);
-      
+
       if (judge) {
         document.getElementById('judgeName').textContent = judge.name;
         const av = document.getElementById('judgeAvatar');
         av.src = `/images/judges/${judge.image}`;
-        av.onerror = function(){ this.src = fallbackSvg(judge.name.charAt(0), '#444'); };
+        av.onerror = () => { av.src = fallbackSvg(judge.name.charAt(0), '#444'); };
       }
 
-      const currentJudgeVotes = judgeVotes[judgeId] || [];
+      const myVotedId = judgeVotes[judgeId] ?? null;
 
-      // ── FLIP Animation: Store old positions ──
+      // FLIP — store old positions
       const oldRects = {};
       document.querySelectorAll('.display-row').forEach(r => {
         oldRects[r.dataset.id] = r.getBoundingClientRect();
       });
 
-      // ── Rebuild List ──
+      // Rebuild
       list.innerHTML = '';
-      contestants.forEach((c, index) => {
-        list.appendChild(buildRow(c, index, judges, currentJudgeVotes, judgeVotes));
-      });
+      contestants.forEach((c, i) => list.appendChild(buildRow(c, i, judges, judgeVotes, myVotedId)));
 
-      // ── FLIP Animation: Apply transforms ──
+      // FLIP — animate
       document.querySelectorAll('.display-row').forEach(r => {
         const old = oldRects[r.dataset.id];
         if (!old) return;
-        const ny = r.getBoundingClientRect();
-        const dy = old.top - ny.top;
+        const dy = old.top - r.getBoundingClientRect().top;
         if (Math.abs(dy) > 1) {
           r.style.transform = `translateY(${dy}px)`;
           r.style.transition = 'none';
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              r.classList.add('flip-animate');
-              r.style.transform = '';
-              r.style.transition = '';
-              r.addEventListener('transitionend', () => r.classList.remove('flip-animate'), { once: true });
-            });
-          });
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            r.classList.add('flip-animate');
+            r.style.transform = '';
+            r.style.transition = '';
+            r.addEventListener('transitionend', () => r.classList.remove('flip-animate'), { once: true });
+          }));
         }
       });
     }
 
+    /* ── Actions ────────────────────────────────────────────────── */
     function addScore(contestantId) {
       socket.emit('add_score', { contestantId, judgeId });
     }
+
+    socket.on('vote_rejected', ({ reason }) => {
+      if (reason === 'already_voted')
+        showToast('⚠️ You have already cast your vote!', 'voted');
+      else if (reason === 'contestant_taken')
+        showToast('🔒 That contestant was already claimed by another judge!', 'taken');
+    });
 
     socket.on('state_update', render);
   </script>
