@@ -1,0 +1,15 @@
+{
+  "name": "hirustar-remote-agent",
+  "version": "1.0.0",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js",
+    "build": "pkg agent.js -t node18-win-x64 -o agent-win.exe"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}

@@ -92,8 +92,17 @@
         </button>
       </nav>
 
+      <!-- ── REMOTE CONTROL ────────────────────────────────── -->
+      <div class="nodes-panel" style="padding-bottom: 0;">
+        <div class="nodes-title" style="color: #cbd5e1;">Remote View Control</div>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+          <button class="btn-admin primary" onclick="broadcastFocus('browser')" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.8rem; border-radius:8px;">🌐 Show Judges</button>
+          <button class="btn-admin" onclick="broadcastFocus('exe')" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.8rem; background:rgba(255,255,255,0.1); border-radius:8px;">⚙️ Show App</button>
+        </div>
+      </div>
+
       <!-- ── CONNECTED NODES ──────────────────────────────── -->
-      <div class="nodes-panel">
+      <div class="nodes-panel" style="margin-top: 0; border-top: none;">
         <div class="nodes-title">Connected Nodes</div>
         <div id="nodesList" class="nodes-list">
           <!-- Dynamically populated -->
@@ -248,6 +257,7 @@
     function setScore(contestantId, score) { socket.emit('set_score', { contestantId, score: parseInt(score) }); }
     function resetVotes() { if (confirm('Reset all judge votes for a new round?')) socket.emit('reset_votes'); }
     function resetScores() { if (confirm('Reset ALL scores to 0? This cannot be undone.')) socket.emit('reset_scores'); }
+    function broadcastFocus(target) { socket.emit('broadcast_focus', { target }); }
 
     socket.on('state_update', render);
 

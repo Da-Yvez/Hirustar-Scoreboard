@@ -361,6 +361,12 @@ io.on('connection', (socket) => {
     broadcastState(null);
   });
 
+  // Admin: remote control switch windows
+  socket.on('broadcast_focus', ({ target }) => {
+    console.log(`[REMOTE CONTROL] Requesting agents to focus: ${target}`);
+    io.emit('focus_window', { target });
+  });
+
   socket.on('disconnect', () => {
     connectedNodes.delete(socket.id);
     broadcastNodes();
