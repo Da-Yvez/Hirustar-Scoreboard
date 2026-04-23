@@ -4,7 +4,7 @@
   "main": "agent.js",
   "scripts": {
     "start": "node agent.js",
-    "build": "pkg agent.js -t node18-win-x64 -o agent-win.exe"
+    "bundle": "pkg agent.js -t node18-win-x64 -o switcher-agent.exe"
   },
   "dependencies": {
     "socket.io-client": "^4.7.2"
