@@ -68,6 +68,8 @@ let judges = deepClone(disk?.judges || fallbackJudges).map(j => ({
   image: String(j.image || '').trim() || `judge_${j.id}.png`,
 }));
 
+let showResultsMode = false;
+
 // Track which judge has already voted for which contestant this round
 // Structure: { judgeId: contestantId | null }  — one vote per judge, exclusive per contestant
 const judgeVotes = {};
@@ -193,10 +195,15 @@ function serializeVotes() {
 
 function broadcastState(triggerEvent = null) {
   ensureVoteMaps();
+  const v = serializeVotes();
+  const allVoted = judges.length > 0 && judges.every(j => v[j.id] !== null && v[j.id] !== undefined);
+  
   const payload = {
     contestants: getSortedContestants(),
     judges,
-    judgeVotes: serializeVotes(),
+    judgeVotes: v,
+    allVoted,
+    showResultsMode,
     trigger: triggerEvent, // { contestantId, judgeId, delta }
   };
   io.emit('state_update', payload);
@@ -341,6 +348,7 @@ io.on('connection', (socket) => {
   // Admin: reset all votes for a new round
   socket.on('reset_votes', () => {
     judges.forEach(j => { judgeVotes[j.id] = null; });
+    showResultsMode = false;
     console.log('[RESET] All judge votes cleared for new round');
     broadcastState(null);
   });
@@ -367,6 +375,18 @@ io.on('connection', (socket) => {
   socket.on('broadcast_focus', ({ target }) => {
     console.log(`[REMOTE CONTROL] Requesting agents to focus: ${target}`);
     io.emit('focus_window', { target });
+  });
+
+  socket.on('show_results', () => {
+    showResultsMode = true;
+    console.log('[RESULTS] Showing final results screen');
+    broadcastState(null);
+  });
+
+  socket.on('hide_results', () => {
+    showResultsMode = false;
+    console.log('[RESULTS] Hiding final results screen');
+    broadcastState(null);
   });
 
   socket.on('disconnect', () => {

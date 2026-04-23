@@ -158,6 +158,12 @@
             <button class="btn-admin primary" onclick="resetVotes()">
               <span>🔄</span> Reset Round Votes
             </button>
+            <button class="btn-admin primary" id="btnShowResults" onclick="showResults()" style="display: none; background: linear-gradient(135deg, #d4a017, #f5c842); color: white; border: none;">
+              <span>🌟</span> Show Final Results
+            </button>
+            <button class="btn-admin" id="btnHideResults" onclick="hideResults()" style="display: none;">
+              <span>👁️‍🗨️</span> Hide Results
+            </button>
           </div>
           <div class="action-group">
             <button class="btn-admin danger" onclick="resetScores()">
@@ -253,10 +259,18 @@
     }
 
     function render(data) {
-      const { contestants, judges, judgeVotes } = data;
+      const { contestants, judges, judgeVotes, allVoted, showResultsMode } = data;
       allJudges = judges;
       allContestants = contestants;
       
+      // Update Results Button Visibility
+      const btnShow = document.getElementById('btnShowResults');
+      const btnHide = document.getElementById('btnHideResults');
+      if (btnShow && btnHide) {
+        btnShow.style.display = (allVoted && !showResultsMode) ? 'inline-flex' : 'none';
+        btnHide.style.display = showResultsMode ? 'inline-flex' : 'none';
+      }
+
       const list = document.getElementById('contestantList');
       list.innerHTML = '';
 
@@ -290,6 +304,8 @@
     function resetVotes() { if (confirm('Reset all judge votes for a new round?')) socket.emit('reset_votes'); }
     function resetScores() { if (confirm('Reset ALL scores to 0? This cannot be undone.')) socket.emit('reset_scores'); }
     function broadcastFocus(target) { socket.emit('broadcast_focus', { target }); }
+    function showResults() { socket.emit('show_results'); }
+    function hideResults() { socket.emit('hide_results'); }
 
     socket.on('state_update', render);
 

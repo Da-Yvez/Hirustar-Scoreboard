@@ -121,17 +121,68 @@ async function animateScoreUpdate(trigger, contestants, judges) {
   previousOrder = contestants.map(c => c.id);
 }
 
-function renderList(contestants, judges, trigger) {
-  if (trigger && currentState) {
-    animateScoreUpdate(trigger, contestants, judges);
+function renderList(contestants, judges, trigger, showResultsMode, judgeVotes) {
+  const scoreboardPanel = document.getElementById('scoreboardPanel');
+  const resultsOverlay = document.getElementById('resultsOverlay');
+
+  if (showResultsMode) {
+    scoreboardPanel.classList.add('hidden');
+    resultsOverlay.classList.add('visible');
+    renderResultsGrid(judges, judgeVotes, contestants);
   } else {
-    preloadAssets(contestants, judges); // Initial preload
-    rebuildList(contestants);
-    previousOrder = contestants.map(c => c.id);
+    scoreboardPanel.classList.remove('hidden');
+    resultsOverlay.classList.remove('visible');
+    
+    if (trigger && currentState) {
+      animateScoreUpdate(trigger, contestants, judges);
+    } else {
+      preloadAssets(contestants, judges); // Initial preload
+      rebuildList(contestants);
+      previousOrder = contestants.map(c => c.id);
+    }
   }
   currentState = { contestants, judges };
 }
 
+function renderResultsGrid(judges, judgeVotes, contestants) {
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+
+  judges.forEach((j, i) => {
+    const cid = judgeVotes[j.id];
+    const contestant = contestants.find(c => c.id === cid);
+    if (!contestant) return;
+
+    const card = document.createElement('div');
+    card.className = 'reveal-card';
+    card.style.animationDelay = `${0.6 + (i * 0.4)}s`;
+    
+    card.innerHTML = `
+      <div class="reveal-side judge">
+        <img class="reveal-avatar" src="/images/judges/${j.image}" onerror="this.src='${fallbackSvg(j.name.charAt(0), '%23444')}'">
+        <div class="reveal-info">
+          <span class="label">The Decision of</span>
+          <div class="name">${j.name}</div>
+        </div>
+      </div>
+      
+      <div class="reveal-arrow">
+        <div class="arrow-glow"></div>
+        <div class="arrow-line"></div>
+      </div>
+      
+      <div class="reveal-side contestant">
+        <div class="reveal-info">
+          <span class="label">Points Awarded To</span>
+          <div class="name">${contestant.name}</div>
+        </div>
+        <img class="reveal-avatar" src="/images/contestants/${contestant.image}" onerror="this.src='${fallbackSvg(contestant.name.charAt(0), '%23333')}'">
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
 socket.on('state_update', (data) => {
-  renderList(data.contestants, data.judges, data.trigger);
+  renderList(data.contestants, data.judges, data.trigger, data.showResultsMode, data.judgeVotes);
 });
