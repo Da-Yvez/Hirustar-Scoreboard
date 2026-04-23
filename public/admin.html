@@ -269,14 +269,20 @@
       // Build expected node list from current judges
       const expected = [
         { key: 'display', label: '📺 Display' },
-        ...allJudges.map(j => ({ key: `judge-${j.id}`, label: `⚖️ ${j.name.split(' ')[0]}` }))
+        ...allJudges.map(j => ({ key: `judge-${j.id}`, label: `⚖️ ${j.name.split(' ')[0]}` })),
+        ...allJudges.map(j => ({ key: `agent-${j.id}`, label: `🔌 Agent (J${j.id})` }))
       ];
 
       // Which nodes are online?
       const onlineKeys = new Set();
+      let genericAgentCount = 0;
       nodes.forEach(n => {
         if (n.type === 'display') onlineKeys.add('display');
         if (n.type === 'judge' && n.id != null) onlineKeys.add(`judge-${n.id}`);
+        if (n.type === 'agent') {
+          if (n.id != null) onlineKeys.add(`agent-${n.id}`);
+          else genericAgentCount++;
+        }
       });
 
       list.innerHTML = '';
@@ -287,6 +293,14 @@
         pill.innerHTML = `<span class="node-dot"></span>${label}`;
         list.appendChild(pill);
       });
+
+      // Add any unassigned agents
+      for (let i = 0; i < genericAgentCount; i++) {
+        const pill = document.createElement('div');
+        pill.className = 'node-pill online';
+        pill.innerHTML = `<span class="node-dot"></span>🔌 Agent (Unassigned)`;
+        list.appendChild(pill);
+      }
     });
 
     // ── Content Manager ────────────────────────────────────────────────────

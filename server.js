@@ -216,6 +216,8 @@ io.on('connection', (socket) => {
   // Client identifies itself
   socket.on('identify', ({ type, id }) => {
     connectedNodes.set(socket.id, { type, id: id ?? null });
+    const idStr = id ? ` (ID: ${id})` : '';
+    console.log(`[ID] Client ${socket.id} identified as: ${type}${idStr}`);
     broadcastNodes();
   });
 
