@@ -34,13 +34,17 @@
     }
     .node-pill.online {
       background: rgba(34,197,94,0.15);
-      color: #000;
+      color: #166534;
+    }
+    .node-pill.offline {
+      background: rgba(239,68,68,0.1);
+      color: #991b1b;
     }
     .node-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #334155;
+      background: #475569;
       flex-shrink: 0;
       transition: background 0.3s, box-shadow 0.3s;
     }
@@ -48,9 +52,37 @@
       background: #22c55e;
       box-shadow: 0 0 6px rgba(34,197,94,0.7);
     }
+    .node-pill.offline .node-dot {
+      background: #ef4444;
+      box-shadow: 0 0 6px rgba(239,68,68,0.5);
+    }
+    
+    .node-group {
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .node-group-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 0.2rem;
+      padding-left: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .node-group-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.05);
+    }
+
     /* Make sidebar flex so nodes panel sticks to bottom */
     .admin-sidebar { display: flex; flex-direction: column; }
-    .admin-tabs { flex: 1; }
+    .admin-tabs { flex: 1; overflow-y: auto; }
 
     /* Judge URL badge in content manager */
     .judge-url-badge {
@@ -266,40 +298,70 @@
       const list = document.getElementById('nodesList');
       if (!list) return;
 
-      // Build expected node list from current judges
-      const expected = [
-        { key: 'display', label: '📺 Display' },
-        ...allJudges.map(j => ({ key: `judge-${j.id}`, label: `⚖️ ${j.name.split(' ')[0]}` })),
-        ...allJudges.map(j => ({ key: `agent-${j.id}`, label: `🔌 Agent (J${j.id})` }))
-      ];
+      // Track online status
+      const online = {
+        display: false,
+        judges: {}, // { id: { window: bool, agent: bool } }
+        genericAgents: 0
+      };
 
-      // Which nodes are online?
-      const onlineKeys = new Set();
-      let genericAgentCount = 0;
       nodes.forEach(n => {
-        if (n.type === 'display') onlineKeys.add('display');
-        if (n.type === 'judge' && n.id != null) onlineKeys.add(`judge-${n.id}`);
+        if (n.type === 'display') online.display = true;
+        if (n.type === 'judge' && n.id != null) {
+          if (!online.judges[n.id]) online.judges[n.id] = {};
+          online.judges[n.id].window = true;
+        }
         if (n.type === 'agent') {
-          if (n.id != null) onlineKeys.add(`agent-${n.id}`);
-          else genericAgentCount++;
+          if (n.id != null) {
+            if (!online.judges[n.id]) online.judges[n.id] = {};
+            online.judges[n.id].agent = true;
+          } else {
+            online.genericAgents++;
+          }
         }
       });
 
       list.innerHTML = '';
-      expected.forEach(({ key, label }) => {
-        const online = onlineKeys.has(key);
-        const pill = document.createElement('div');
-        pill.className = 'node-pill' + (online ? ' online' : '');
-        pill.innerHTML = `<span class="node-dot"></span>${label}`;
-        list.appendChild(pill);
+
+      // 1. Display
+      const dPill = document.createElement('div');
+      dPill.className = 'node-pill ' + (online.display ? 'online' : 'offline');
+      dPill.innerHTML = `<span class="node-dot"></span>📺 Main Display`;
+      list.appendChild(dPill);
+
+      // 2. Judges Grouped
+      allJudges.forEach(j => {
+        const group = document.createElement('div');
+        group.className = 'node-group';
+        group.innerHTML = `<div class="node-group-title">${j.name}</div>`;
+        
+        const winOnline = online.judges[j.id]?.window;
+        const wPill = document.createElement('div');
+        wPill.className = 'node-pill ' + (winOnline ? 'online' : 'offline');
+        wPill.innerHTML = `<span class="node-dot"></span>🌐 Window Connection`;
+        
+        const ageOnline = online.judges[j.id]?.agent;
+        const aPill = document.createElement('div');
+        aPill.className = 'node-pill ' + (ageOnline ? 'online' : 'offline');
+        aPill.innerHTML = `<span class="node-dot"></span>🔌 Switcher Agent`;
+        
+        group.appendChild(wPill);
+        group.appendChild(aPill);
+        list.appendChild(group);
       });
 
-      // Add any unassigned agents
-      for (let i = 0; i < genericAgentCount; i++) {
-        const pill = document.createElement('div');
-        pill.className = 'node-pill online';
-        pill.innerHTML = `<span class="node-dot"></span>🔌 Agent (Unassigned)`;
-        list.appendChild(pill);
+      // 3. Generic Agents
+      if (online.genericAgents > 0) {
+        const group = document.createElement('div');
+        group.className = 'node-group';
+        group.innerHTML = `<div class="node-group-title">Other Agents</div>`;
+        for (let i = 0; i < online.genericAgents; i++) {
+          const pill = document.createElement('div');
+          pill.className = 'node-pill online';
+          pill.innerHTML = `<span class="node-dot"></span>🔌 Agent (Unassigned)`;
+          group.appendChild(pill);
+        }
+        list.appendChild(group);
       }
     });
 
