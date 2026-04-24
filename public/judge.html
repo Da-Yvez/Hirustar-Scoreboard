@@ -155,7 +155,7 @@
     }
 
     /* ── Build one row ──────────────────────────────────────────── */
-    function buildRow(c, index, judges, judgeVotes, myVotedId) {
+    function buildRow(c, index, judges, judgeVotes, myVotedId, topN) {
       const rank = index + 1;
 
       // Who voted for this contestant?
@@ -202,7 +202,7 @@
       }
 
       const row = document.createElement('div');
-      row.className = `display-row ${rank <= 4 ? 'top' : 'low'}`;
+      row.className = `display-row ${rank <= topN ? 'top' : 'low'}`;
       row.dataset.id = c.id;
       row.innerHTML = `
         <div class="display-bar">
@@ -221,7 +221,7 @@
 
     /* ── Render ─────────────────────────────────────────────────── */
     function render(data) {
-      const { contestants, judges, judgeVotes } = data;
+      const { contestants, judges, judgeVotes, topN = 4 } = data;
       const judge = judges.find(j => j.id === judgeId);
 
       if (judge) {
@@ -241,7 +241,7 @@
 
       // Rebuild
       list.innerHTML = '';
-      contestants.forEach((c, i) => list.appendChild(buildRow(c, i, judges, judgeVotes, myVotedId)));
+      contestants.forEach((c, i) => list.appendChild(buildRow(c, i, judges, judgeVotes, myVotedId, topN)));
 
       // FLIP — animate
       document.querySelectorAll('.display-row').forEach(r => {

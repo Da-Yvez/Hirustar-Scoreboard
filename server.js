@@ -44,6 +44,7 @@ function loadStateFromDisk() {
 function saveStateToDisk() {
   try {
     const payload = {
+      topN,
       contestants: contestants.map(c => ({ ...c, score: clampScore(c.score) })),
       judges: judges.map(j => ({ ...j })),
     };
@@ -55,6 +56,8 @@ function saveStateToDisk() {
 
 // ── Live state (source of truth: state.json via Admin Content tab) ──────────
 const disk = loadStateFromDisk();
+let topN = disk?.topN !== undefined ? Number(disk.topN) : 4;
+
 let contestants = deepClone(disk?.contestants || fallbackContestants).map(c => ({
   id: Number(c.id),
   name: String(c.name || '').trim() || `Contestant ${c.id}`,
@@ -199,6 +202,7 @@ function broadcastState(triggerEvent = null) {
   const allVoted = judges.length > 0 && judges.every(j => v[j.id] !== null && v[j.id] !== undefined);
   
   const payload = {
+    topN,
     contestants: getSortedContestants(),
     judges,
     judgeVotes: v,
@@ -230,6 +234,7 @@ io.on('connection', (socket) => {
 
   // Send full state on connect
   socket.emit('state_update', {
+    topN,
     contestants: getSortedContestants(),
     judges,
     judgeVotes: serializeVotes(),
@@ -269,6 +274,13 @@ io.on('connection', (socket) => {
     saveStateToDisk();
     console.log(`[SCORE] ${judge.name} → ${contestant.name} +${delta} (total: ${contestant.score})`);
     broadcastState({ contestantId, judgeId, delta });
+  });
+
+  // Admin: settings
+  socket.on('set_top_n', ({ value }) => {
+    topN = Math.max(1, Number(value) || 4);
+    saveStateToDisk();
+    broadcastState(null);
   });
 
   // Admin: set score directly

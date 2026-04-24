@@ -34,9 +34,9 @@ function clampScore(score) {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-function createRow(c, rank, percent) {
+function createRow(c, rank, percent, topN) {
   const row = document.createElement('div');
-  row.className = `display-row ${rank <= 4 ? 'top' : 'low'}`;
+  row.className = `display-row ${rank <= topN ? 'top' : 'low'}`;
   row.dataset.id = c.id;
   row.innerHTML = `
     <div class="display-bar">
@@ -56,17 +56,17 @@ function createRow(c, rank, percent) {
   return row;
 }
 
-function rebuildList(contestants) {
+function rebuildList(contestants, topN) {
   contestantList.innerHTML = '';
   contestants.forEach((c, i) => {
     const percent = clampScore(c.score);
-    contestantList.appendChild(createRow(c, i + 1, percent));
+    contestantList.appendChild(createRow(c, i + 1, percent, topN));
   });
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-async function animateScoreUpdate(trigger, contestants, judges) {
+async function animateScoreUpdate(trigger, contestants, judges, topN) {
   const { contestantId, judgeId } = trigger;
   const judge = judges.find(j => j.id === judgeId);
   const popup = document.getElementById(`popup-${contestantId}`);
@@ -97,7 +97,7 @@ async function animateScoreUpdate(trigger, contestants, judges) {
     oldRects[r.dataset.id] = r.getBoundingClientRect();
   });
 
-  rebuildList(contestants);
+  rebuildList(contestants, topN);
 
   document.querySelectorAll('.display-row').forEach(r => {
     const old = oldRects[r.dataset.id];
@@ -121,7 +121,7 @@ async function animateScoreUpdate(trigger, contestants, judges) {
   previousOrder = contestants.map(c => c.id);
 }
 
-function renderList(contestants, judges, trigger, showResultsMode, judgeVotes) {
+function renderList(contestants, judges, trigger, showResultsMode, judgeVotes, topN) {
   const scoreboardPanel = document.getElementById('scoreboardPanel');
   const resultsOverlay = document.getElementById('resultsOverlay');
 
@@ -134,10 +134,10 @@ function renderList(contestants, judges, trigger, showResultsMode, judgeVotes) {
     resultsOverlay.classList.remove('visible');
     
     if (trigger && currentState) {
-      animateScoreUpdate(trigger, contestants, judges);
+      animateScoreUpdate(trigger, contestants, judges, topN);
     } else {
       preloadAssets(contestants, judges); // Initial preload
-      rebuildList(contestants);
+      rebuildList(contestants, topN);
       previousOrder = contestants.map(c => c.id);
     }
   }
@@ -184,5 +184,5 @@ function renderResultsGrid(judges, judgeVotes, contestants) {
 }
 
 socket.on('state_update', (data) => {
-  renderList(data.contestants, data.judges, data.trigger, data.showResultsMode, data.judgeVotes);
+  renderList(data.contestants, data.judges, data.trigger, data.showResultsMode, data.judgeVotes, data.topN || 4);
 });
