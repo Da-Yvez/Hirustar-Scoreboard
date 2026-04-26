@@ -374,6 +374,24 @@ io.on('connection', (socket) => {
     broadcastState(null);
   });
 
+  // Admin: reset specific judge's vote
+  socket.on('reset_judge_vote', ({ judgeId, revertScore }) => {
+    const cid = judgeVotes[judgeId];
+    if (cid !== null && cid !== undefined) {
+      if (revertScore) {
+        const contestant = contestants.find(c => c.id === cid);
+        if (contestant) {
+          contestant.score = clampScore(contestant.score - 7);
+          console.log(`[SCORE] Reverting +7 points from ${contestant.name} for Judge ${judgeId}'s undone vote (new score: ${contestant.score})`);
+        }
+      }
+      judgeVotes[judgeId] = null;
+      console.log(`[RESET] Judge ${judgeId} vote cleared`);
+      saveStateToDisk();
+      broadcastState(null);
+    }
+  });
+
   // Admin: remove all contestants (content reset)
   socket.on('clear_contestants', () => {
     contestants = [];
