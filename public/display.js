@@ -123,15 +123,17 @@ async function animateScoreUpdate(trigger, contestants, judges, topN) {
 
 function renderList(contestants, judges, trigger, showResultsMode, judgeVotes, topN) {
   const scoreboardPanel = document.getElementById('scoreboardPanel');
-  const resultsOverlay = document.getElementById('resultsOverlay');
+  const scoreboardSubtitle = document.getElementById('scoreboardSubtitle');
 
   if (showResultsMode) {
-    scoreboardPanel.classList.add('hidden');
-    resultsOverlay.classList.add('visible');
-    renderResultsGrid(judges, judgeVotes, contestants);
+    if (!scoreboardPanel.classList.contains('final-results-active')) {
+      scoreboardPanel.classList.add('final-results-active');
+      renderFinalResults(contestants, judges, judgeVotes, topN);
+    }
   } else {
-    scoreboardPanel.classList.remove('hidden');
-    resultsOverlay.classList.remove('visible');
+    scoreboardPanel.classList.remove('final-results-active');
+    scoreboardPanel.classList.remove('centered-layout');
+    if (scoreboardSubtitle) scoreboardSubtitle.textContent = 'Live Scoreboard';
     
     if (trigger && currentState) {
       animateScoreUpdate(trigger, contestants, judges, topN);
@@ -144,43 +146,111 @@ function renderList(contestants, judges, trigger, showResultsMode, judgeVotes, t
   currentState = { contestants, judges };
 }
 
-function renderResultsGrid(judges, judgeVotes, contestants) {
-  const grid = document.getElementById('resultsGrid');
-  grid.innerHTML = '';
-
-  judges.forEach((j, i) => {
-    const cid = judgeVotes[j.id];
-    const contestant = contestants.find(c => c.id === cid);
-    if (!contestant) return;
-
-    const card = document.createElement('div');
-    card.className = 'reveal-card';
-    card.style.animationDelay = `${0.6 + (i * 0.4)}s`;
-    
-    card.innerHTML = `
-      <div class="reveal-side judge">
-        <img class="reveal-avatar" src="/images/judges/${j.image}" onerror="this.src='${fallbackSvg(j.name.charAt(0), '%23444')}'">
-        <div class="reveal-info">
-          <span class="label">The Decision of</span>
-          <div class="name">${j.name}</div>
-        </div>
-      </div>
-      
-      <div class="reveal-arrow">
-        <div class="arrow-glow"></div>
-        <div class="arrow-line"></div>
-      </div>
-      
-      <div class="reveal-side contestant">
-        <div class="reveal-info">
-          <span class="label">Points Awarded To</span>
-          <div class="name">${contestant.name}</div>
-        </div>
-        <img class="reveal-avatar" src="/images/contestants/${contestant.image}" onerror="this.src='${fallbackSvg(contestant.name.charAt(0), '%23333')}'">
-      </div>
-    `;
-    grid.appendChild(card);
+async function renderFinalResults(contestants, judges, judgeVotes, topN) {
+  const scoreboardSubtitle = document.getElementById('scoreboardSubtitle');
+  
+  // 1. First, identify and fade out the red rows
+  const rows = document.querySelectorAll('.display-row');
+  let losers = [];
+  let winners = [];
+  
+  rows.forEach(row => {
+    if (row.classList.contains('low')) {
+      losers.push(row);
+    } else {
+      winners.push(row);
+    }
   });
+
+  // Fade out losers
+  losers.forEach(row => row.classList.add('phasing-out'));
+  await sleep(1500); // Wait for fade out
+  
+  // 1.5. Now change layout to center
+  const scoreboardPanel = document.getElementById('scoreboardPanel');
+  if (scoreboardPanel) scoreboardPanel.classList.add('centered-layout');
+  
+  // Hide losers completely
+  losers.forEach(row => row.classList.add('hidden-final'));
+
+  // 2. Move winners to center and scale up
+  winners.forEach((row, i) => {
+    row.classList.add('final-winner');
+    // Add judge badges (hidden initially)
+    const cid = row.dataset.id;
+    const contestant = contestants.find(x => String(x.id) === String(cid));
+    const votingJudges = judges.filter(j => judgeVotes[j.id] === contestant?.id);
+    
+    if (votingJudges.length > 0) {
+      const badgeContainer = document.createElement('div');
+      badgeContainer.className = 'judge-badges';
+      badgeContainer.id = `badges-${cid}`;
+      
+      let badgesHtml = `<span class="voted-by-label">Voted By</span><div class="judge-badge-list">`;
+      votingJudges.forEach(j => {
+        badgesHtml += `<img class="judge-badge-img" src="/images/judges/${j.image}" 
+                           alt="${j.name}" title="${j.name}"
+                           onerror="this.src='${fallbackSvg(j.name.charAt(0), '%23444')}'">`;
+      });
+      badgesHtml += `</div>`;
+      badgeContainer.innerHTML = badgesHtml;
+      row.appendChild(badgeContainer);
+    }
+  });
+
+  await sleep(100); // Brief pause before scaling
+  winners.forEach(row => row.classList.add('active'));
+  
+  // 3. Trigger winning particles
+  await sleep(800);
+  winners.forEach((row, i) => {
+    setTimeout(() => spawnParticles(row), i * 300);
+  });
+
+  // 4. Show who voted (fade in badges)
+  await sleep(1000);
+  winners.forEach(row => {
+    const badges = row.querySelector('.judge-badges');
+    if (badges) badges.classList.add('visible');
+  });
+
+  // 5. Update header title
+  if (scoreboardSubtitle) {
+    scoreboardSubtitle.style.opacity = '0';
+    await sleep(500);
+    scoreboardSubtitle.textContent = 'WINNING CONTESTANTS';
+    scoreboardSubtitle.style.opacity = '1';
+    scoreboardSubtitle.style.transition = 'opacity 0.8s ease';
+  }
+}
+
+function spawnParticles(element) {
+  const rect = element.getBoundingClientRect();
+  const colors = ['#f5c842', '#26b962', '#fff', '#4e8cff'];
+  
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 8 + 4;
+    p.style.width = `${size}px`;
+    p.style.height = `${size}px`;
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    
+    // Position randomly within the element
+    const x = rect.left + Math.random() * rect.width;
+    const y = rect.top + Math.random() * rect.height;
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    
+    // Random target direction
+    const tx = (Math.random() - 0.5) * 400;
+    const ty = (Math.random() - 0.5) * 400;
+    p.style.setProperty('--tx', `${tx}px`);
+    p.style.setProperty('--ty', `${ty}px`);
+    
+    document.body.appendChild(p);
+    p.addEventListener('animationend', () => p.remove());
+  }
 }
 
 socket.on('state_update', (data) => {

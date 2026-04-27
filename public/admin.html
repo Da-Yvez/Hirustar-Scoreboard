@@ -170,11 +170,11 @@
       </div>
 
       <nav class="admin-tabs">
-        <button class="admin-tab active" id="tabScores" onclick="switchTab('scores')">
+        <button type="button" class="admin-tab active" id="tabScores" onclick="switchTab('scores')">
           <span class="tab-icon">🏆</span>
           <span class="tab-label">Live Scores</span>
         </button>
-        <button class="admin-tab" id="tabContent" onclick="switchTab('content')">
+        <button type="button" class="admin-tab" id="tabContent" onclick="switchTab('content')">
           <span class="tab-icon">🧩</span>
           <span class="tab-label">Content Manager</span>
         </button>
@@ -184,8 +184,8 @@
       <div class="nodes-panel" style="padding-bottom: 0;">
         <div class="nodes-title" style="color: #cbd5e1;">Remote View Control</div>
         <div style="display:flex; flex-direction:column; gap:0.5rem;">
-          <button class="btn-admin primary" onclick="broadcastFocus('browser')" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.8rem; border-radius:8px;">🌐 Show Judges</button>
-          <button class="btn-admin" onclick="broadcastFocus('exe')" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.8rem; background:rgba(255,255,255,0.1); border-radius:8px;">⚙️ Show App</button>
+          <button type="button" class="btn-admin primary" onclick="broadcastFocus('browser')" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.8rem; border-radius:8px;">🌐 Show Judges</button>
+          <button type="button" class="btn-admin" onclick="broadcastFocus('exe')" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.8rem; background:rgba(255,255,255,0.1); border-radius:8px;">⚙️ Show App</button>
         </div>
       </div>
 
@@ -214,27 +214,26 @@
             <div class="topn-control">
               <label>Top Ranked (Green):</label>
               <div class="topn-input-wrapper">
-                <button onclick="changeTopN(-1)">-</button>
+                <button type="button" onclick="changeTopN(-1)">-</button>
                 <input id="topNInput" type="number" min="1" max="20" value="4" readonly>
-                <button onclick="changeTopN(1)">+</button>
+                <button type="button" onclick="changeTopN(1)">+</button>
               </div>
             </div>
-            <button class="btn-admin primary" onclick="resetVotes()">
+            <button type="button" class="btn-admin primary" onclick="resetVotes()">
               <span>🔄</span> Reset Round Votes
             </button>
-            <button class="btn-admin primary" id="btnShowResults" onclick="showResults()" style="display: none; background: linear-gradient(135deg, #d4a017, #f5c842); color: white; border: none;">
+            <button type="button" class="btn-admin primary" id="btnShowResults" onclick="showResults()" style="display: none; background: linear-gradient(135deg, #d4a017, #f5c842); color: white; border: none;">
               <span>🌟</span> Show Final Results
             </button>
-            <button class="btn-admin" id="btnHideResults" onclick="hideResults()" style="display: none;">
+            <button type="button" class="btn-admin" id="btnHideResults" onclick="hideResults()" style="display: none;">
               <span>👁️‍🗨️</span> Hide Results
             </button>
           </div>
           <div class="action-group">
-            <button class="btn-admin danger" onclick="resetScores()">
+            <button type="button" class="btn-admin danger" onclick="resetScores()">
               <span>🗑️</span> Reset All Scores
             </button>
           </div>
-        </div>
         </div>
         <div class="scores-grid" id="contestantList">
           <!-- Dynamically populated -->
@@ -245,15 +244,15 @@
       <div class="tab-page" id="pageContent">
         <div class="admin-action-bar">
           <div class="action-group">
-            <button class="btn-admin primary" onclick="addContestant()">
+            <button type="button" class="btn-admin primary" onclick="addContestant()">
               <span>👤</span> Add Contestant
             </button>
-            <button class="btn-admin" onclick="addJudge()">
+            <button type="button" class="btn-admin" onclick="addJudge()">
               <span>👨‍⚖️</span> Add Judge
             </button>
           </div>
           <div class="action-group">
-            <button class="btn-admin danger" onclick="removeAllContestants()">
+            <button type="button" class="btn-admin danger" onclick="removeAllContestants()">
               Remove All
             </button>
           </div>
@@ -365,7 +364,7 @@
                  onchange="setScore(${c.id}, this.value)" title="Edit score">
           <div class="admin-judge-btns">${judges.map(j => {
             const disabled = judgeVotes[j.id] === c.id;
-            return `<button class="btn-plus7" ${disabled?'disabled':''}
+            return `<button type="button" class="btn-plus7" ${disabled?'disabled':''}
               onclick="addAsJudge(${c.id},${j.id})">+7<span class="judge-label">${j.name.split(' ')[0]}</span></button>`;
           }).join('')}</div>`;
         list.appendChild(card);
@@ -510,9 +509,9 @@
               </div>
             </div>
             <div class="card-actions">
-              <button class="btn-small" onclick="uploadForContestant(${c.id})">Photo</button>
-              <button class="btn-small primary" onclick="saveContestant(${c.id})">Save</button>
-              <button class="btn-small danger" onclick="deleteContestant(${c.id})">Delete</button>
+              <button type="button" class="btn-small" onclick="uploadForContestant(${c.id})">Photo</button>
+              <button type="button" class="btn-small primary" onclick="saveContestant(${c.id})">Save</button>
+              <button type="button" class="btn-small danger" onclick="deleteContestant(${c.id})">Delete</button>
             </div>
           `;
           cWrap.appendChild(card);
@@ -538,9 +537,9 @@
               </div>
             </div>
             <div class="card-actions">
-              <button class="btn-small" onclick="uploadForJudge(${j.id})">Photo</button>
-              <button class="btn-small primary" onclick="saveJudge(${j.id})">Save</button>
-              <button class="btn-small danger" onclick="deleteJudge(${j.id})">Delete</button>
+              <button type="button" class="btn-small" onclick="uploadForJudge(${j.id})">Photo</button>
+              <button type="button" class="btn-small primary" onclick="saveJudge(${j.id})">Save</button>
+              <button type="button" class="btn-small danger" onclick="deleteJudge(${j.id})">Delete</button>
             </div>
           `;
           jWrap.appendChild(card);
