@@ -114,6 +114,125 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
+
+    /* ── Slide to vote control ───────────────────────────────────── */
+    .judge-actions .vote-slider {
+      width: 140px;
+      min-width: 140px;
+      max-width: 140px;
+      height: 52px;
+      border-radius: 999px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      border: 2px solid rgba(251, 191, 36, 0.65);
+      background: linear-gradient(135deg, rgba(58, 39, 5, 0.95), rgba(92, 58, 8, 0.95));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 18px rgba(245, 158, 11, 0.2);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    }
+
+    .judge-actions .vote-slider[data-disabled="true"] {
+      border-color: rgba(148, 163, 184, 0.5);
+      background: rgba(71, 85, 105, 0.22);
+      filter: grayscale(0.3);
+      opacity: 0.7;
+    }
+
+    .vote-slider-track-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fef3c7;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      pointer-events: none;
+      opacity: 0.9;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+      transition: color 0.2s ease, letter-spacing 0.2s ease, text-shadow 0.2s ease;
+    }
+
+    .vote-slider-progress {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      bottom: 4px;
+      width: 0;
+      border-radius: 999px;
+      pointer-events: none;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.28), rgba(251, 191, 36, 0.58));
+      transition: width 0.05s linear;
+      z-index: 1;
+    }
+
+    .vote-slider-handle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(180deg, #fcd34d, #f59e0b);
+      color: #3b2200;
+      font-size: 1.2rem;
+      font-weight: 900;
+      cursor: grab;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.42);
+      transform: translateX(0);
+      transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      position: relative;
+      z-index: 3;
+    }
+
+    .vote-slider-handle:active {
+      cursor: grabbing;
+    }
+
+    .vote-slider[data-disabled="true"] .vote-slider-handle {
+      cursor: default;
+      background: linear-gradient(180deg, #94a3b8, #64748b);
+      color: #e2e8f0;
+      box-shadow: none;
+    }
+
+    .vote-slider[data-complete="true"] .vote-slider-track-text {
+      color: #fef3c7;
+      letter-spacing: 0.14em;
+    }
+
+    .vote-slider.vote-slider-near-end {
+      border-color: #fbbf24;
+      background: linear-gradient(135deg, rgba(95, 54, 8, 0.96), rgba(135, 79, 12, 0.95));
+      box-shadow: 0 0 22px rgba(251, 191, 36, 0.55), 0 0 36px rgba(245, 158, 11, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .vote-slider.vote-slider-near-end .vote-slider-track-text {
+      color: #fff8d6;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.65);
+      letter-spacing: 0.13em;
+    }
+
+    .vote-slider.vote-slider-near-end .vote-slider-handle {
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.26), 0 10px 24px rgba(245, 158, 11, 0.55);
+      filter: saturate(1.15);
+      animation: nearEndPop 0.45s ease-out;
+    }
+
+    @keyframes nearEndPop {
+      0% { transform: translateX(var(--slide-x, 0px)) scale(1); }
+      50% { transform: translateX(var(--slide-x, 0px)) scale(1.08); }
+      100% { transform: translateX(var(--slide-x, 0px)) scale(1.03); }
+    }
   </style>
 </head>
 <body class="judge-view-container">
@@ -193,12 +312,22 @@
           </button>`;
 
       } else if (iHaveVoted) {
-        // I already voted elsewhere — grey this out
-        btnHTML = `<button class="btn-plus7 btn-greyed" disabled>VOTE</button>`;
+        // I already voted elsewhere — show disabled slider style
+        btnHTML = `
+          <div class="vote-slider btn-greyed" data-disabled="true">
+            <div class="vote-slider-track-text">VOTE LOCKED</div>
+            <div class="vote-slider-progress"></div>
+            <button class="vote-slider-handle" type="button" disabled>➜</button>
+          </div>`;
 
       } else {
-        // Open — can vote
-        btnHTML = `<button class="btn-plus7" onclick="addScore(${c.id})">VOTE</button>`;
+        // Open — can vote by sliding arrow fully right
+        btnHTML = `
+          <div class="vote-slider" data-contestant-id="${c.id}" data-disabled="false" data-complete="false">
+            <div class="vote-slider-track-text">SLIDE TO VOTE</div>
+            <div class="vote-slider-progress"></div>
+            <button class="vote-slider-handle" type="button" onpointerdown="startVoteSlide(event, ${c.id})">➜</button>
+          </div>`;
       }
 
       const row = document.createElement('div');
@@ -265,6 +394,117 @@
     function addScore(contestantId) {
       socket.emit('add_score', { contestantId, judgeId });
     }
+
+    const slideState = {
+      activeSlider: null,
+      activeHandle: null,
+      contestantId: null,
+      startClientX: 0,
+      startOffset: 0,
+      maxOffset: 0,
+      moved: false
+    };
+
+    function resetVoteSlide(slider, animate = true) {
+      if (!slider) return;
+      const handle = slider.querySelector('.vote-slider-handle');
+      const progress = slider.querySelector('.vote-slider-progress');
+      if (!handle) return;
+      handle.style.transition = animate ? 'transform 0.18s ease' : 'none';
+      handle.style.transform = 'translateX(0px)';
+      handle.style.setProperty('--slide-x', '0px');
+      if (progress) progress.style.width = '0px';
+      slider.classList.remove('vote-slider-near-end');
+      slider.dataset.complete = 'false';
+    }
+
+    function startVoteSlide(event, contestantId) {
+      const handle = event.currentTarget;
+      const slider = handle.closest('.vote-slider');
+      if (!slider || slider.dataset.disabled === 'true') return;
+
+      const trackWidth = slider.clientWidth;
+      const handleWidth = handle.clientWidth;
+      const currentTransform = handle.style.transform || 'translateX(0px)';
+      const currentOffset = Number((currentTransform.match(/-?\d+(\.\d+)?/) || [0])[0]);
+
+      slideState.activeSlider = slider;
+      slideState.activeHandle = handle;
+      slideState.contestantId = contestantId;
+      slideState.startClientX = event.clientX;
+      slideState.startOffset = currentOffset;
+      slideState.maxOffset = Math.max(0, trackWidth - handleWidth - 8);
+      slideState.moved = false;
+
+      handle.style.transition = 'none';
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    }
+
+    function moveVoteSlide(event) {
+      if (!slideState.activeSlider || !slideState.activeHandle) return;
+
+      const dx = event.clientX - slideState.startClientX;
+      const nextOffset = Math.min(
+        slideState.maxOffset,
+        Math.max(0, slideState.startOffset + dx)
+      );
+
+      const progressEl = slideState.activeSlider.querySelector('.vote-slider-progress');
+      const moveProgress = slideState.maxOffset > 0 ? (nextOffset / slideState.maxOffset) : 0;
+      const nearEnd = moveProgress >= 0.78;
+
+      slideState.activeHandle.style.transform = `translateX(${nextOffset}px)`;
+      slideState.activeHandle.style.setProperty('--slide-x', `${nextOffset}px`);
+      if (progressEl) {
+        const filledWidth = Math.min(slideState.activeSlider.clientWidth - 8, nextOffset + slideState.activeHandle.clientWidth);
+        progressEl.style.width = `${filledWidth}px`;
+      }
+      slideState.activeSlider.classList.toggle('vote-slider-near-end', nearEnd);
+      slideState.moved = true;
+    }
+
+    function endVoteSlide(event) {
+      if (!slideState.activeSlider || !slideState.activeHandle) return;
+
+      const slider = slideState.activeSlider;
+      const handle = slideState.activeHandle;
+      const moveProgress = slideState.maxOffset > 0
+        ? Number((handle.style.transform.match(/-?\d+(\.\d+)?/) || [0])[0]) / slideState.maxOffset
+        : 0;
+
+      const shouldVote = slideState.moved && moveProgress > 0.92;
+
+      if (shouldVote) {
+        handle.style.transition = 'transform 0.12s ease-out';
+        handle.style.transform = `translateX(${slideState.maxOffset}px)`;
+        handle.style.setProperty('--slide-x', `${slideState.maxOffset}px`);
+        const progressEl = slider.querySelector('.vote-slider-progress');
+        if (progressEl) progressEl.style.width = `${slider.clientWidth - 8}px`;
+        slider.dataset.complete = 'true';
+        slider.dataset.disabled = 'true';
+        slider.classList.add('vote-slider-near-end');
+        addScore(slideState.contestantId);
+      } else {
+        resetVoteSlide(slider, true);
+      }
+
+      if (typeof event.pointerId === 'number') {
+        try { handle.releasePointerCapture(event.pointerId); } catch (e) {}
+      }
+
+      slideState.activeSlider = null;
+      slideState.activeHandle = null;
+      slideState.contestantId = null;
+      slideState.startClientX = 0;
+      slideState.startOffset = 0;
+      slideState.maxOffset = 0;
+      slideState.moved = false;
+    }
+
+    window.addEventListener('pointermove', moveVoteSlide);
+    window.addEventListener('pointerup', endVoteSlide);
+    window.addEventListener('pointercancel', endVoteSlide);
 
     socket.on('vote_rejected', ({ reason }) => {
       if (reason === 'already_voted')
