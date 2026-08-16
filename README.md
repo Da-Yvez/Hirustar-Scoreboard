@@ -56,12 +56,14 @@ npm start
 ```
 
 Access the interfaces via your browser:
-- **Admin**: `http://localhost:3000/admin`
-- **Display**: `http://localhost:3000/display`
-- **Judge 1**: `http://localhost:3000/judge/1`
+- **Admin**: `http://localhost:4000/admin`
+- **Display**: `http://localhost:4000/display`
+- **Judge 1**: `http://localhost:4000/judge/1`
+- **Judge 2**: `http://localhost:4000/judge/2`
+- **Judge 3**: `http://localhost:4000/judge/3`
 
 > [!TIP]
-> To access from other devices (Tablets/Phones), use your computer's IP address: `http://<YOUR_IP>:3000`
+> To access from other devices (Tablets/Phones), use your computer's IP address: `http://<YOUR_IP>:4000`
 
 ---
 

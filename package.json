@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "dev": "node server.js",
     "bundle": "pkg . --targets node18-win-x64 --output hirustar-scoreboard.exe"
   },
   "bin": "server.js",

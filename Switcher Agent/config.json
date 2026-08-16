@@ -1,5 +1,5 @@
 {
-  "serverUrl": "http://10.10.10.241:3000",
+  "serverUrl": "http://10.10.10.241:4000",
   "exeProcessName": "Judge-App",
   "browserProcessName": "chrome",
   "ipsToJudges": {
