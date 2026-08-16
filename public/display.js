@@ -166,7 +166,13 @@ async function renderFinalResults(contestants, judges, judgeVotes, topN) {
   losers.forEach(row => row.classList.add('phasing-out'));
   await sleep(1500); // Wait for fade out
   
-  // 1.5. Now change layout to center
+  // 1.5. Record old positions for FLIP animation
+  const oldRects = {};
+  winners.forEach(r => {
+    oldRects[r.dataset.id] = r.getBoundingClientRect();
+  });
+  
+  // Now change layout to center and expand panel
   const scoreboardPanel = document.getElementById('scoreboardPanel');
   if (scoreboardPanel) scoreboardPanel.classList.add('centered-layout');
   
@@ -196,6 +202,32 @@ async function renderFinalResults(contestants, judges, judgeVotes, topN) {
       badgeContainer.innerHTML = badgesHtml;
       row.appendChild(badgeContainer);
     }
+  });
+
+  // FLIP animation calculation
+  winners.forEach(r => {
+    const ny = r.getBoundingClientRect();
+    const dy = oldRects[r.dataset.id].top - ny.top;
+    const dx = oldRects[r.dataset.id].left - ny.left;
+    r.style.transform = `translate(${dx}px, ${dy}px)`;
+    r.style.transition = 'none';
+  });
+
+  // Force reflow
+  document.body.offsetHeight;
+
+  // Trigger the move to center
+  winners.forEach(r => {
+    r.style.transition = 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1s ease';
+    r.style.transform = 'translate(0px, 0px)';
+  });
+
+  await sleep(1000); // Wait for them to slide into place
+
+  // Cleanup inline styles before adding active state
+  winners.forEach(r => {
+    r.style.transform = '';
+    r.style.transition = '';
   });
 
   await sleep(100); // Brief pause before scaling

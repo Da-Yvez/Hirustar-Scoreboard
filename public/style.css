@@ -81,6 +81,7 @@ html, body {
   -webkit-backdrop-filter: none;
   border-left: none;
   overflow-x: hidden; /* Prevent horizontal scroll during row exit animations */
+  transition: background 1.2s ease, backdrop-filter 1.2s ease;
 }
 
 .scoreboard-header {
@@ -121,10 +122,11 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center; /* Vertically center rows */
   gap: 40px; /* Further increased gap for better separation */
   overflow-y: auto;
   overflow-x: hidden; /* Prevent horizontal scroll bars */
-  padding: 20px 5px 20px 50px; /* Left padding for overlapping avatars */
+  padding: 20px 5px 20px 60px; /* Left padding for overlapping avatars */
   position: relative;
 }
 
@@ -730,7 +732,11 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: center; /* Vertically center the winners */
-  padding-bottom: 100px;
+  padding-bottom: 5vh;
+  /* width: 100%; removed to keep on right side */
+  background: radial-gradient(circle at center, rgba(15, 15, 30, 0.6) 0%, rgba(5, 5, 12, 0.95) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .scoreboard-panel.final-results-active.centered-layout .scoreboard-header {
@@ -742,11 +748,11 @@ html, body {
   flex: none; /* Don't grow to fill space, let justify-content center it */
   display: flex;
   flex-direction: column;
-  gap: 60px;
+  gap: min(6vh, 60px);
   justify-content: center;
   align-items: center;
   overflow: visible;
-  padding-left: 0;
+  padding-left: 60px; /* Add padding back to prevent avatar cropping on left side */
 }
 
 /* Hide losing rows in final results mode after phasing out */
@@ -762,7 +768,7 @@ html, body {
 
 .display-row.final-winner {
   width: 100%;
-  max-width: 650px;
+  max-width: min(650px, 80vw);
   transform: scale(1); /* Initial scale for transition */
   transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1s ease;
   z-index: 50;
@@ -802,7 +808,7 @@ html, body {
 /* Judge attribution badges */
 .judge-badges {
   position: absolute;
-  right: -20px;
+  right: -60px; /* Shifted further right */
   bottom: -35px;
   display: flex;
   align-items: center;
