@@ -279,6 +279,7 @@
 
       const isMyVote       = myVotedId === c.id;            // I voted for this one
       const iHaveVoted     = myVotedId !== null;             // I have voted (somewhere)
+      const amIDisabled    = c.disabledJudges && c.disabledJudges.includes(judgeId);
 
       const votedJudges = judges.filter(j => judgeVotes[j.id] === c.id);
       const votedJudgesHTML = votedJudges.length > 0 
@@ -293,6 +294,15 @@
       if (isMyVote) {
         // ★ Bright yellow VOTED button — MY choice
         btnHTML = `<button class="btn-plus7 btn-voted" disabled>★ VOTED</button>`;
+
+      } else if (amIDisabled) {
+        // I am disabled from voting for this contestant
+        btnHTML = `
+          <div class="vote-slider btn-greyed" data-disabled="true">
+            <div class="vote-slider-track-text">VOTE DISABLED</div>
+            <div class="vote-slider-progress"></div>
+            <button class="vote-slider-handle" type="button" disabled>➜</button>
+          </div>`;
 
       } else if (iHaveVoted) {
         // I already voted elsewhere — show disabled slider style
@@ -495,6 +505,8 @@
         showToast('⚠️ You have already cast your vote!', 'voted');
       else if (reason === 'contestant_taken')
         showToast('🔒 That contestant was already claimed by another judge!', 'taken');
+      else if (reason === 'judge_disabled')
+        showToast('🚫 You are not allowed to vote for this contestant.', 'taken');
     });
 
     socket.on('state_update', render);

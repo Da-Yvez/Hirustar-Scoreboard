@@ -400,8 +400,9 @@ body.admin-body {
   border-radius: var(--adm-radius);
   padding: 16px 20px;
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   box-shadow: var(--adm-shadow-sm);
   transition: all var(--transition-smooth);
 }

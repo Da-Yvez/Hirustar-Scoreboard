@@ -348,29 +348,60 @@
       contestants.forEach(c => {
         const card = document.createElement('div');
         card.className = 'score-row-card';
+        
+        const allowedJudgesHTML = `
+          <div class="allowed-judges-live" style="width: 100%; display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.9rem; color: var(--adm-text-secondary); align-items: center; border-top: 1px solid var(--adm-border); padding-top: 12px; margin-top: 4px;">
+            <span style="font-weight: 800; color: var(--adm-text-primary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Allow Judges:</span>
+            ${judges.map(j => {
+              const isAllowed = !c.disabledJudges || !c.disabledJudges.includes(j.id);
+              return `<label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: ${isAllowed ? 'var(--adm-text-primary)' : 'var(--adm-text-muted)'}; font-weight: ${isAllowed ? '600' : '400'}; transition: all 0.2s;">
+                <input type="checkbox" ${isAllowed ? 'checked' : ''} onchange="toggleJudgeVote(${c.id}, ${j.id}, this.checked)" style="accent-color: var(--adm-accent-blue); width: 16px; height: 16px; cursor: pointer;"> 
+                ${j.name}
+              </label>`;
+            }).join('')}
+          </div>
+        `;
+
         card.innerHTML = `
-          <img class="contestant-avatar" src="/images/contestants/${c.image}" alt="${c.name}"
-               onerror="this.src='${fallback(c.name.charAt(0),'%2364748b')}'">
-          <div class="contestant-name">${c.name}</div>
-          <div class="vote-indicators">${judges.map(j => {
-            const jv = judgeVotes[j.id] === c.id;
-            const clickHandler = jv 
-              ? `onclick="resetJudgeVote(${j.id}, '${j.name.replace(/'/g, "\\'")}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15) rotate(-3deg)'" onmouseout="this.style.transform='scale(1) rotate(0)'" title="Click to undo ${j.name}'s vote"`
-              : `title="${j.name}"`;
-            return `<img class="vote-indicator ${jv?'voted':''}" src="/images/judges/${j.image}"
-              onerror="this.src='${fallback(j.name.charAt(0),'%2394a3b8')}'" ${clickHandler}>`;
-          }).join('')}</div>
-          <input class="content-input score-edit-input" type="number" value="${c.score}"
-                 onchange="setScore(${c.id}, this.value)" title="Edit score">
-          <div class="admin-judge-btns">${judges.map(j => {
-            const disabled = judgeVotes[j.id] === c.id;
-            return `<button type="button" class="btn-plus7" ${disabled?'disabled':''}
-              onclick="addAsJudge(${c.id},${j.id})">+7<span class="judge-label">${j.name.split(' ')[0]}</span></button>`;
-          }).join('')}</div>`;
+          <div class="score-row-top" style="display: flex; align-items: center; gap: 16px; width: 100%;">
+            <img class="contestant-avatar" src="/images/contestants/${c.image}" alt="${c.name}"
+                 onerror="this.src='${fallback(c.name.charAt(0),'%2364748b')}'">
+            <div class="contestant-name">${c.name}</div>
+            <div class="vote-indicators">${judges.map(j => {
+              const jv = judgeVotes[j.id] === c.id;
+              const clickHandler = jv 
+                ? `onclick="resetJudgeVote(${j.id}, '${j.name.replace(/'/g, "\\'")}')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15) rotate(-3deg)'" onmouseout="this.style.transform='scale(1) rotate(0)'" title="Click to undo ${j.name}'s vote"`
+                : `title="${j.name}"`;
+              return `<img class="vote-indicator ${jv?'voted':''}" src="/images/judges/${j.image}"
+                onerror="this.src='${fallback(j.name.charAt(0),'%2394a3b8')}'" ${clickHandler}>`;
+            }).join('')}</div>
+            <input class="content-input score-edit-input" type="number" value="${c.score}"
+                   onchange="setScore(${c.id}, this.value)" title="Edit score">
+            <div class="admin-judge-btns">${judges.map(j => {
+              const disabled = judgeVotes[j.id] === c.id;
+              return `<button type="button" class="btn-plus7" ${disabled?'disabled':''}
+                onclick="addAsJudge(${c.id},${j.id})">+7<span class="judge-label">${j.name.split(' ')[0]}</span></button>`;
+            }).join('')}</div>
+          </div>
+          ${allowedJudgesHTML}`;
         list.appendChild(card);
       });
 
       if (activeTab === 'content') buildContentManager();
+    }
+
+    function toggleJudgeVote(contestantId, judgeId, isAllowed) {
+      const c = allContestants.find(x => x.id === contestantId);
+      if (!c) return;
+      let disabled = c.disabledJudges ? [...c.disabledJudges] : [];
+      if (isAllowed) {
+        disabled = disabled.filter(id => id !== judgeId);
+      } else {
+        if (!disabled.includes(judgeId)) disabled.push(judgeId);
+      }
+      socket.emit('upsert_contestant', { 
+        id: c.id, name: c.name, score: c.score, image: c.image, disabledJudges: disabled 
+      });
     }
 
     function addAsJudge(contestantId, judgeId) { socket.emit('add_score', { contestantId, judgeId, force: true }); }
@@ -565,7 +596,7 @@
       const name = document.getElementById(`c-name-${id}`).value.trim();
       const score = clampScore(document.getElementById(`c-score-${id}`).value);
       const c = allContestants.find(x => x.id === id);
-      socket.emit('upsert_contestant', { id, name, score, image: c?.image });
+      socket.emit('upsert_contestant', { id, name, score, image: c?.image, disabledJudges: c?.disabledJudges || [] });
     }
 
     function deleteContestant(id) {

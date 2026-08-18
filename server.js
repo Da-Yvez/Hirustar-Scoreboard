@@ -45,7 +45,7 @@ function saveStateToDisk() {
   try {
     const payload = {
       topN,
-      contestants: contestants.map(c => ({ ...c, score: clampScore(c.score) })),
+      contestants: contestants.map(c => ({ ...c, score: clampScore(c.score), disabledJudges: c.disabledJudges || [] })),
       judges: judges.map(j => ({ ...j })),
     };
     fs.writeFileSync(STATE_FILE, JSON.stringify(payload, null, 2), 'utf8');
@@ -63,6 +63,7 @@ let contestants = deepClone(disk?.contestants || fallbackContestants).map(c => (
   name: String(c.name || '').trim() || `Contestant ${c.id}`,
   image: String(c.image || '').trim() || `contestant_${c.id}.png`,
   score: clampScore(c.score),
+  disabledJudges: Array.isArray(c.disabledJudges) ? c.disabledJudges.map(Number) : [],
 }));
 
 let judges = deepClone(disk?.judges || fallbackJudges).map(j => ({
@@ -249,6 +250,10 @@ io.on('connection', (socket) => {
     if (!judge || !contestant) return;
 
     if (!force) {
+      if (contestant.disabledJudges && contestant.disabledJudges.includes(judgeId)) {
+        socket.emit('vote_rejected', { reason: 'judge_disabled', contestantId, judgeId });
+        return;
+      }
       // Rule 1: This judge already voted
       if (judgeVotes[judgeId] !== null && judgeVotes[judgeId] !== undefined) {
         socket.emit('vote_rejected', { reason: 'already_voted', contestantId, judgeId });
@@ -291,11 +296,12 @@ io.on('connection', (socket) => {
     const name = String(payload?.name || '').trim();
     const image = String(payload?.image || '').trim();
     const score = clampScore(payload?.score);
+    const disabledJudges = Array.isArray(payload?.disabledJudges) ? payload.disabledJudges.map(Number) : [];
 
     if (!name) return;
 
     if (id && contestants.some(c => c.id === id)) {
-      contestants = contestants.map(c => c.id === id ? { ...c, name, image: image || c.image, score } : c);
+      contestants = contestants.map(c => c.id === id ? { ...c, name, image: image || c.image, score, disabledJudges } : c);
     } else {
       const newId = nextId(contestants);
       contestants.push({
@@ -303,6 +309,7 @@ io.on('connection', (socket) => {
         name,
         image: image || `contestant_${newId}.png`,
         score,
+        disabledJudges,
       });
     }
     ensureVoteMaps();
