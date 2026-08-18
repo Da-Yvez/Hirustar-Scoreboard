@@ -2,6 +2,7 @@ const socket = io();
 socket.on('connect', () => socket.emit('identify', { type: 'display' }));
 let currentState = null;
 let previousOrder = [];
+let previousTopIds = new Set(); // Track who was in the green (top) zone
 const contestantList = document.getElementById('contestantList');
 const preloadedImages = new Set();
 
@@ -99,6 +100,29 @@ async function animateScoreUpdate(trigger, contestants, judges, topN) {
 
   rebuildList(contestants, topN);
 
+  // ── Detect promotions (low → top) and flash gold outline ──
+  document.querySelectorAll('.display-row').forEach(r => {
+    const id = Number(r.dataset.id);
+    const isNowTop = r.classList.contains('top');
+    const wasTop = previousTopIds.has(id);
+    if (isNowTop && !wasTop) {
+      // This contestant just got promoted from red → green!
+      r.classList.add('promoted');
+      const bar = r.querySelector('.display-bar');
+      if (bar) {
+        bar.addEventListener('animationend', () => r.classList.remove('promoted'), { once: true });
+      } else {
+        // Fallback: remove after animation duration
+        setTimeout(() => r.classList.remove('promoted'), 2700);
+      }
+    }
+  });
+
+  // Update tracking sets for next round
+  previousTopIds = new Set(
+    contestants.slice(0, topN).map(c => c.id)
+  );
+
   document.querySelectorAll('.display-row').forEach(r => {
     const old = oldRects[r.dataset.id];
     if (!old) return;
@@ -140,6 +164,8 @@ function renderList(contestants, judges, trigger, showResultsMode, judgeVotes, t
     } else {
       preloadAssets(contestants, judges); // Initial preload
       rebuildList(contestants, topN);
+      // Seed the tracking set on first load
+      previousTopIds = new Set(contestants.slice(0, topN).map(c => c.id));
       previousOrder = contestants.map(c => c.id);
     }
   }

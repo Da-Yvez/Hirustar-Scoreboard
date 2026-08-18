@@ -332,8 +332,76 @@ html, body {
   100% { transform: scale(1); }
 }
 
+/* ── Promotion flash (red → green) ─────────────────────── */
+/*
+   When a contestant crosses from the red zone into the green zone,
+   the .promoted class is added to .display-row for the duration of
+   the animation, then removed automatically.
+*/
+
+.display-row.promoted .display-bar {
+  animation: promotionOutline 2.6s ease-out forwards;
+}
+
+.display-row.promoted .display-avatar {
+  animation: promotionAvatarGlow 2.6s ease-out forwards;
+}
+
+.display-row.promoted .display-name {
+  animation: promotionNameFlash 2.6s ease-out forwards;
+}
+
+@keyframes promotionOutline {
+  0% {
+    box-shadow:
+      0 0 0 0px rgba(245, 200, 66, 0),
+      inset 0 0 0px rgba(245, 200, 66, 0);
+    border-color: rgba(38, 185, 98, 0.4);
+  }
+  8% {
+    box-shadow:
+      0 0 0 3px rgba(245, 200, 66, 0.9),
+      0 0 24px 6px rgba(245, 200, 66, 0.5),
+      inset 0 0 20px rgba(245, 200, 66, 0.15);
+    border-color: rgba(245, 200, 66, 0.95);
+  }
+  35% {
+    box-shadow:
+      0 0 0 3px rgba(245, 200, 66, 0.85),
+      0 0 30px 8px rgba(245, 200, 66, 0.45),
+      inset 0 0 25px rgba(245, 200, 66, 0.12);
+    border-color: rgba(245, 200, 66, 0.9);
+  }
+  70% {
+    box-shadow:
+      0 0 0 2px rgba(245, 200, 66, 0.4),
+      0 0 14px 3px rgba(245, 200, 66, 0.2),
+      inset 0 0 10px rgba(245, 200, 66, 0.06);
+    border-color: rgba(245, 200, 66, 0.5);
+  }
+  100% {
+    box-shadow: none;
+    border-color: rgba(38, 185, 98, 0.4);
+  }
+}
+
+@keyframes promotionAvatarGlow {
+  0%   { border-color: white;  box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+  8%   { border-color: #f5c842; box-shadow: 0 0 0 4px rgba(245,200,66,0.5), 0 10px 30px rgba(245,200,66,0.4); }
+  40%  { border-color: #f5c842; box-shadow: 0 0 0 3px rgba(245,200,66,0.4), 0 10px 25px rgba(245,200,66,0.3); }
+  100% { border-color: white;  box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+}
+
+@keyframes promotionNameFlash {
+  0%   { color: rgba(255,255,255,0.95); text-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+  8%   { color: #f5c842; text-shadow: 0 0 16px rgba(245,200,66,0.8), 0 2px 10px rgba(0,0,0,0.35); }
+  40%  { color: #f5d97a; text-shadow: 0 0 10px rgba(245,200,66,0.5); }
+  100% { color: rgba(255,255,255,0.95); text-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+}
+
 /* ── Row reorder animation (FLIP technique) ───────────── */
 /* now applied to .display-row */
+
 
 /* ── JUDGE PANEL & ADMIN PANEL ─────────────────────────── */
 

@@ -385,115 +385,363 @@ body.admin-body {
   border-color: rgba(239, 68, 68, 0.2);
 }
 
-/* Scores Tab */
-.scores-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
+/* ══════════════════════════════════════════════════════
+   LIVE SCORES — Redesigned Minimal & Modern
+   ══════════════════════════════════════════════════════ */
 
-.score-row-card {
-  background: var(--adm-glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--adm-glass-border);
-  border-radius: var(--adm-radius);
-  padding: 16px 20px;
+.scores-grid {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
-  box-shadow: var(--adm-shadow-sm);
-  transition: all var(--transition-smooth);
+  gap: 10px;
+}
+
+/* ── Score Row Card ── */
+.score-row-card {
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  position: relative;
+}
+
+.score-row-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  border-radius: 14px 0 0 14px;
+  transition: background 0.25s ease;
 }
 
 .score-row-card:hover {
-  box-shadow: var(--adm-shadow-md);
-  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+  border-color: rgba(148, 163, 184, 0.4);
 }
 
-.score-row-card .contestant-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.score-row-card:hover::before {
+  background: linear-gradient(180deg, var(--adm-accent-blue), var(--adm-accent-purple));
 }
 
-.contestant-name {
-  flex: 1;
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.vote-indicators {
+/* ── Top Row ── */
+.score-row-top {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 0;
+  padding: 14px 20px;
+  min-height: 72px;
 }
 
-.vote-indicator {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: var(--adm-shadow-sm);
-  opacity: 0.3;
-  filter: grayscale(1);
-  transition: all var(--transition-smooth);
-}
-
-.vote-indicator.voted {
-  opacity: 1;
-  filter: grayscale(0);
-  border-color: var(--adm-accent-gold);
-}
-
-.score-edit-input {
-  width: 80px;
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--adm-accent-blue);
-}
-
-.admin-judge-btns {
+/* ── Rank Badge ── */
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   display: flex;
-  gap: 4px;
-}
-
-.btn-plus7 {
-  width: 64px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--adm-accent-gold), #f5c842);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all var(--transition-smooth);
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  line-height: 1.1;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+  margin-right: 14px;
+}
+
+.rank-badge.rank-1 {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245,158,11,0.4);
+}
+.rank-badge.rank-2 {
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  color: white;
+  box-shadow: 0 2px 8px rgba(107,114,128,0.3);
+}
+.rank-badge.rank-3 {
+  background: linear-gradient(135deg, #b45309, #d97706);
+  color: white;
+  box-shadow: 0 2px 8px rgba(180,83,9,0.3);
+}
+.rank-badge.rank-other {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ── Avatar ── */
+.score-row-card .contestant-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid #f1f5f9;
+  margin-right: 14px;
   flex-shrink: 0;
 }
 
-.btn-plus7:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(212, 160, 23, 0.4);
+/* ── Name ── */
+.contestant-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--adm-text-primary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.btn-plus7:disabled {
+/* ── Score Display ── */
+
+.score-edit-input {
+  width: 68px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #1e293b;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 4px 0;
+  font-family: inherit;
+  letter-spacing: -1px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+  margin: 0 14px 0 auto;
+}
+
+.score-edit-input:focus {
+  outline: none;
+  border-color: var(--adm-accent-blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  background: white;
+}
+
+/* ── Judge Permission Row (collapsible footer) ── */
+
+.allowed-judges-live {
+  display: flex;
+  align-items: center;
+  gap: 0 !important;
+  padding: 10px 20px 10px 20px !important;
+  margin-top: 0 !important;
+  border-top: 1px solid #f1f5f9 !important;
+  background: #fafbfc;
+  border-radius: 0 0 14px 14px;
+  flex-wrap: wrap !important;
+  row-gap: 6px !important;
+}
+
+.allowed-judges-live .judge-perm-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.allowed-judges-live label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  background: #f1f5f9;
+  transition: all 0.2s;
+  margin-right: 6px;
+}
+
+.allowed-judges-live label:hover {
   background: #e2e8f0;
+}
+
+.allowed-judges-live label input[type="checkbox"] {
+  width: 13px !important;
+  height: 13px !important;
+  margin: 0;
+  accent-color: var(--adm-accent-blue);
+}
+
+/* ── Judge Vote Chips ─────────────────────────────────────── */
+
+.judge-chips {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Base chip */
+.judge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 100px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.chip-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.chip-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.chip-badge {
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 20px;
+  line-height: 1.3;
+  transition: all 0.2s;
+}
+
+/* ── IDLE chip (ready to vote) ── */
+.judge-chip.idle {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.judge-chip.idle .chip-badge.idle-badge {
+  background: #f59e0b;
+  color: white;
+}
+
+.judge-chip.idle:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.judge-chip.idle:hover:not(:disabled) .chip-avatar {
+  transform: scale(1.1);
+}
+
+.judge-chip.idle:active:not(:disabled) {
+  transform: scale(0.96) translateY(0);
+}
+
+/* ── LOCKED chip (judge voted elsewhere) ── */
+.judge-chip.idle.locked {
+  background: #f8fafc;
+  border-color: #e2e8f0;
   color: #94a3b8;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.judge-label {
-  font-size: 0.6rem;
-  margin-top: 2px;
-  opacity: 0.9;
+.judge-chip.idle.locked .chip-badge.idle-badge {
+  background: #e2e8f0;
+  color: #94a3b8;
 }
+
+/* ── VOTED chip (vote cast here) ── */
+.judge-chip.voted {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #14532d;
+}
+
+.judge-chip.voted .chip-badge.voted-badge {
+  background: #22c55e;
+  color: white;
+}
+
+.judge-chip.voted:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.judge-chip.voted:hover .chip-avatar {
+  transform: scale(1.05) rotate(-3deg);
+}
+
+/* ── CONFIRMING state (inline undo UI) ── */
+.judge-chip.confirming {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #881337;
+  gap: 6px;
+  cursor: default;
+  transform: none !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  animation: chipPulse 0.3s ease-out;
+}
+
+@keyframes chipPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.chip-undo-actions {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.undo-yes {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.undo-yes:hover { background: #dc2626; }
+
+.undo-keep {
+  background: #e2e8f0;
+  color: #475569;
+  border: none;
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.undo-keep:hover { background: #cbd5e1; }
 
 /* Hidden elements */
 .file-input-hidden {
