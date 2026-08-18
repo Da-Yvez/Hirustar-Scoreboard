@@ -254,14 +254,7 @@ io.on('connection', (socket) => {
         socket.emit('vote_rejected', { reason: 'already_voted', contestantId, judgeId });
         return;
       }
-      // Rule 2: Another judge already claimed this contestant
-      const contestantTaken = Object.entries(judgeVotes).some(
-        ([jid, cid]) => cid === contestantId && Number(jid) !== judgeId
-      );
-      if (contestantTaken) {
-        socket.emit('vote_rejected', { reason: 'contestant_taken', contestantId, judgeId });
-        return;
-      }
+      // Rule 2 was removed: multiple judges can vote for the same contestant
     }
 
     // Apply score

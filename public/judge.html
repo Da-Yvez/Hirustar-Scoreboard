@@ -277,16 +277,15 @@
     function buildRow(c, index, judges, judgeVotes, myVotedId, topN) {
       const rank = index + 1;
 
-      // Who voted for this contestant?
-      const claimedEntry    = Object.entries(judgeVotes).find(([, cid]) => cid === c.id);
-      const claimedByJudgeId = claimedEntry?.[0];
-      const claimedByJudge  = claimedByJudgeId
-        ? judges.find(j => String(j.id) === String(claimedByJudgeId))
-        : null;
-
       const isMyVote       = myVotedId === c.id;            // I voted for this one
-      const isTakenByOther = claimedByJudge && !isMyVote;   // Someone else voted for this
       const iHaveVoted     = myVotedId !== null;             // I have voted (somewhere)
+
+      const votedJudges = judges.filter(j => judgeVotes[j.id] === c.id);
+      const votedJudgesHTML = votedJudges.length > 0 
+        ? `<div class="vote-indicators" style="gap: 8px; margin-left: 16px;">` + votedJudges.map(j => 
+            `<img class="vote-indicator voted" src="/images/judges/${j.image}" title="Voted by ${j.name}" onerror="this.src='${fallbackSvg(j.name.charAt(0),'%2394a3b8')}'" style="width: 38px; height: 38px; border-width: 3px;">`
+          ).join('') + `</div>`
+        : '';
 
       /* ── Button logic ─────────────────────────────────────────── */
       let btnHTML;
@@ -294,22 +293,6 @@
       if (isMyVote) {
         // ★ Bright yellow VOTED button — MY choice
         btnHTML = `<button class="btn-plus7 btn-voted" disabled>★ VOTED</button>`;
-
-      } else if (isTakenByOther) {
-        // Another judge voted here — highlighted indicator with their avatar
-        const jImg      = `/images/judges/${claimedByJudge.image}`;
-        const jFallback = fallbackSvg(claimedByJudge.name.charAt(0), '#7a5c00');
-        const firstName = claimedByJudge.name.split(' ')[0];
-        btnHTML = `
-          <button class="btn-plus7 btn-taken-by" disabled>
-            <img class="tb-avatar" src="${jImg}"
-                 onerror="this.src='${jFallback}'"
-                 title="${claimedByJudge.name}">
-            <div class="tb-label">
-              <span class="tb-sub">Voted by</span>
-              <span class="tb-name">${firstName}</span>
-            </div>
-          </button>`;
 
       } else if (iHaveVoted) {
         // I already voted elsewhere — show disabled slider style
@@ -339,6 +322,7 @@
           <div class="display-content">
             <div class="display-rank">${String(rank).padStart(2, '0')}</div>
             <div class="display-name">${c.name}</div>
+            ${votedJudgesHTML}
             <div class="display-percent">${c.score}%</div>
             <div class="judge-actions">${btnHTML}</div>
             <img class="display-avatar" src="/images/contestants/${c.image}" alt="${c.name}"
