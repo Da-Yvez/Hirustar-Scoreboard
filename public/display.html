@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1920, initial-scale=1.0">
   <title>Hirustar — Live Scoreboard</title>
   <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
   <div class="display-container">
     <video class="bg-video" autoplay loop muted playsinline>
@@ -13,8 +15,10 @@
     </video>
     <div class="scoreboard-panel" id="scoreboardPanel">
       <div class="scoreboard-header">
-        <h1 class="scoreboard-title">HIRUSTAR SEASON 5</h1>
-        <div class="scoreboard-subtitle" id="scoreboardSubtitle">Live Scoreboard</div>
+        <h1 class="scoreboard-title">
+          <span class="brand-hiru">HIRU</span><span class="brand-star">STAR</span>
+          <div class="brand-season">SEASON 05</div>
+        </h1>
       </div>
       <div class="contestant-list" id="contestantList"></div>
     </div>
@@ -24,4 +28,5 @@
   <script src="/socket.io.min.js"></script>
   <script src="/display.js"></script>
 </body>
+
 </html>
