@@ -90,51 +90,16 @@ html, body {
   flex-shrink: 0;
 }
 
-.scoreboard-title {
-  text-shadow: none;
-  filter: none;
+.scoreboard-logo {
+  max-width: 320px;
+  max-height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.6));
+  margin: 30px auto 0 auto;
+  transform: translateX(28px); /* Shift horizontally to align with the visual center of contestant rows */
   display: block;
 }
 
-.brand-hiru, .brand-star {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  font-size: 2.8rem;
-  letter-spacing: 2px;
-  display: inline-block;
-  line-height: 1;
-}
-
-.brand-hiru {
-  background: linear-gradient(to bottom, #ffffff 0%, #e1e8ed 30%, #aab8c2 45%, #ffffff 55%, #8899a6 85%, #555555 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 10px rgba(255,255,255,0.2));
-}
-
-.brand-star {
-  background: linear-gradient(to bottom, #ffffff 0%, #e1e8ed 30%, #aab8c2 45%, #ffffff 55%, #8899a6 85%, #555555 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 10px rgba(255,255,255,0.2));
-  margin-left: 2px;
-}
-
-.brand-season {
-  font-family: 'Cinzel', 'Georgia', serif;
-  font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: 6px;
-  margin-top: 8px;
-  background: linear-gradient(to bottom, #ffe082 0%, #f5c842 35%, #e5a93b 50%, #c4831f 65%, #ffe082 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 8px rgba(245, 200, 66, 0.5)) drop-shadow(0 2px 3px rgba(0,0,0,0.9));
-  text-transform: uppercase;
-}
 
 
 .scoreboard-panel.hidden {
